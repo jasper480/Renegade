@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Renegade Plastics Tools</title>
+<style>
+  :root{
+    --green:#4A7C59;
+    --green-dark:#345A41;
+    --green-deep:#21382A;
+    --green-tint:#EDF3EE;
+    --green-line:#CFE0D4;
+    --ink:#1C2620;
+    --muted:#5E6B62;
+    --bg:#FAFBFA;
+    --card:#FFFFFF;
+    --flag:#8A6D1F;
+    --flag-bg:#FBF4DF;
+    --shadow:0 1px 2px rgba(33,56,42,.06),0 8px 24px rgba(33,56,42,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  /* Nav */
+  .nav{
+    position:sticky;top:0;z-index:20;
+    background:var(--green);
+    color:#fff;
+    border-bottom:3px solid var(--green-deep);
+  }
+  .nav-inner{
+    max-width:1000px;margin:0 auto;padding:0 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    min-height:60px;flex-wrap:wrap;gap:6px 16px;
+  }
+  .wordmark{
+    display:flex;align-items:baseline;gap:8px;
+    font-weight:700;letter-spacing:.5px;cursor:pointer;
+  }
+  .wordmark .r{font-size:18px;text-transform:uppercase;}
+  .wordmark .p{font-size:18px;text-transform:uppercase;font-weight:400;opacity:.9;}
+  .wordmark .tag{font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.75;border-left:1px solid rgba(255,255,255,.4);padding-left:8px;}
+  .nav-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+  .nav-tab{
+    font-size:13px;font-weight:700;letter-spacing:.3px;
+    padding:8px 12px;border-radius:6px;color:#EAF2EC;cursor:pointer;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .nav-tab:hover{background:rgba(255,255,255,.12);}
+  .nav-tab.active{background:#fff;color:var(--green-dark);}
+
+  /* Layout */
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 64px;}
+  .page{display:none;}
+  .page.active{display:block;animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+    color:var(--green);margin:0 0 6px;
+  }
+  h1.page-title{font-size:30px;line-height:1.1;margin:0 0 6px;color:var(--green-deep);font-weight:700;}
+  .page-sub{color:var(--muted);font-size:15px;margin:0 0 28px;max-width:640px;}
+
+  /* Panels */
+  .panel{
+    background:var(--card);border:1px solid var(--green-line);border-radius:12px;
+    padding:22px 22px 24px;margin-bottom:22px;box-shadow:var(--shadow);
+  }
+  .panel-title{
+    display:flex;align-items:center;gap:10px;
+    font-size:17px;font-weight:700;color:var(--green-deep);margin:0 0 4px;
+  }
+  .panel-title::before{
+    content:"";width:4px;height:18px;border-radius:2px;background:var(--green);display:inline-block;
+  }
+  .panel-desc{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+
+  /* Fields */
+  .grid{display:grid;gap:16px;}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--green-deep);margin-bottom:6px;}
+  .field .hint{font-weight:400;color:var(--muted);font-size:11.5px;}
+  input,select{
+    width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    padding:11px 12px;border:1px solid var(--green-line);border-radius:8px;background:#fff;
+    appearance:none;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.16);}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%234A7C59' d='M1 1l5 5 5-5'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+
+  /* Readouts */
+  .readout{
+    background:var(--green-tint);border:1px solid var(--green-line);border-radius:10px;
+    padding:6px 4px;margin-top:6px;
+  }
+  .readout-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 14px;border-bottom:1px solid var(--green-line);
+  }
+  .readout-row:last-child{border-bottom:none;}
+  .readout-row .rk{font-size:13px;color:var(--green-deep);font-weight:700;}
+  .readout-row .rk small{display:block;font-weight:400;color:var(--muted);font-size:11px;}
+  .readout-val{display:flex;align-items:center;gap:8px;}
+  .readout-val .num{
+    font-size:18px;font-weight:700;color:var(--green-dark);
+    font-variant-numeric:tabular-nums;letter-spacing:.2px;min-width:0;text-align:right;
+  }
+  .readout-row.big .num{font-size:22px;}
+
+  .copy-btn{
+    border:1px solid var(--green-line);background:#fff;color:var(--green);
+    font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.4px;
+    padding:5px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;
+  }
+  .copy-btn:hover{background:var(--green);color:#fff;border-color:var(--green);}
+  .copy-btn.done{background:var(--green-dark);color:#fff;border-color:var(--green-dark);}
+
+  .note{
+    background:var(--green-tint);border:1px solid var(--green-line);border-left:4px solid var(--green);
+    border-radius:8px;padding:12px 14px;font-size:13px;color:var(--green-deep);margin-top:14px;
+  }
+  .flag{
+    background:var(--flag-bg);border:1px solid #EBDBA8;border-left:4px solid var(--flag);
+    border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--flag);margin-top:14px;
+  }
+  .hintline{font-size:12.5px;color:var(--muted);margin-top:10px;min-height:0;}
+
+  details.method{margin-top:16px;border-top:1px solid var(--green-line);padding-top:12px;}
+  details.method summary{
+    cursor:pointer;font-size:12.5px;font-weight:700;color:var(--green);letter-spacing:.3px;
+    list-style:none;display:flex;align-items:center;gap:6px;
+  }
+  details.method summary::-webkit-details-marker{display:none;}
+  details.method summary::before{content:"+";font-size:15px;line-height:1;width:14px;}
+  details.method[open] summary::before{content:"\2013";}
+  details.method .method-body{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;}
+  details.method .method-body code{background:var(--green-tint);padding:1px 5px;border-radius:4px;color:var(--green-deep);}
+  details.method ul{margin:8px 0;padding-left:18px;}
+  details.method li{margin:3px 0;}
+  details.method .dens-field{display:flex;align-items:center;gap:10px;margin-top:10px;max-width:300px;}
+  details.method .dens-field input{max-width:110px;}
+
+  /* Home */
+  .hero{padding:8px 0 6px;}
+  .tool-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:8px;}
+  .tool-card{
+    background:var(--card);border:1px solid var(--green-line);border-radius:12px;padding:22px;
+    cursor:pointer;box-shadow:var(--shadow);transition:transform .12s ease,border-color .12s ease;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .tool-card:hover{transform:translateY(-2px);border-color:var(--green);}
+  .tool-card .tc-num{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);}
+  .tool-card h3{margin:0;font-size:17px;color:var(--green-deep);}
+  .tool-card p{margin:0;font-size:13px;color:var(--muted);}
+  .tool-card .go{margin-top:auto;font-size:12.5px;font-weight:700;color:var(--green);}
+
+  /* Pallet */
+  .roll-row{
+    border:1px solid var(--green-line);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff;
+    position:relative;
+  }
+  .roll-row .rr-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr .8fr;gap:12px;align-items:end;}
+  .roll-row .rr-out{
+    margin-top:12px;padding-top:12px;border-top:1px dashed var(--green-line);
+    display:flex;flex-wrap:wrap;gap:18px;font-size:12.5px;color:var(--green-deep);
+  }
+  .roll-row .rr-out b{font-variant-numeric:tabular-nums;}
+  .remove-btn{
+    border:1px solid var(--green-line);background:#fff;color:var(--muted);border-radius:6px;
+    font-family:inherit;font-size:12px;font-weight:700;padding:7px 10px;cursor:pointer;
+  }
+  .remove-btn:hover{border-color:#C0504E;color:#C0504E;}
+  .add-btn{
+    border:1px dashed var(--green);background:var(--green-tint);color:var(--green-dark);
+    font-family:inherit;font-size:13px;font-weight:700;padding:11px 16px;border-radius:8px;cursor:pointer;width:100%;
+  }
+  .add-btn:hover{background:#E2EDE5;}
+
+  .pallet-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  .tot-card{background:var(--green-tint);border:1px solid var(--green-line);border-radius:10px;padding:16px;}
+  .tot-card .tk{font-size:11.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:4px;}
+  .tot-card .tv{font-size:26px;font-weight:700;color:var(--green-dark);font-variant-numeric:tabular-nums;}
+  .tot-card .tu{font-size:13px;color:var(--muted);font-weight:400;}
+
+  .print-action{
+    border:none;background:var(--green);color:#fff;font-family:inherit;font-size:14px;font-weight:700;
+    padding:12px 20px;border-radius:8px;cursor:pointer;margin-top:18px;letter-spacing:.3px;
+  }
+  .print-action:hover{background:var(--green-dark);}
+
+  footer{border-top:1px solid var(--green-line);margin-top:8px;}
+  .footer-inner{max-width:1000px;margin:0 auto;padding:20px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+  /* Print summary */
+  #printSummary{display:none;}
+  @media print{
+    body{background:#fff;}
+    body *{visibility:hidden;}
+    #printSummary,#printSummary *{visibility:visible;}
+    #printSummary{display:block;position:absolute;left:0;top:0;width:100%;padding:24px;}
+    .ps-head{border-bottom:3px solid #4A7C59;padding-bottom:10px;margin-bottom:16px;}
+    .ps-head h2{margin:0;color:#21382A;font-size:20px;}
+    .ps-head .ps-meta{color:#5E6B62;font-size:12px;margin-top:4px;}
+    #printSummary table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px;}
+    #printSummary th,#printSummary td{border:1px solid #CFE0D4;padding:7px 9px;text-align:left;}
+    #printSummary th{background:#EDF3EE;color:#21382A;}
+    #printSummary td.num,#printSummary th.num{text-align:right;font-variant-numeric:tabular-nums;}
+    #printSummary .ps-totals td{font-weight:700;color:#21382A;}
+    #printSummary .ps-foot{font-size:10.5px;color:#5E6B62;margin-top:14px;border-top:1px solid #CFE0D4;padding-top:8px;}
+  }
+
+  @media (max-width:720px){
+    .tool-cards{grid-template-columns:1fr;}
+    .grid.cols-2,.grid.cols-3{grid-template-columns:1fr;}
+    .roll-row .rr-grid{grid-template-columns:1fr 1fr;}
+    .pallet-totals{grid-template-columns:1fr;}
+    h1.page-title{font-size:25px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="wordmark" data-go="home">
+      <span class="r">Renegade</span><span class="p">Plastics</span>
+      <span class="tag">Tools</span>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab" data-go="home">Home</div>
+      <div class="nav-tab" data-go="convert">Unit Converter</div>
+      <div class="nav-tab" data-go="pricing">Pricing</div>
+      <div class="nav-tab" data-go="roll">Roll &amp; Pallet Weight</div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HOME -->
+  <section class="page" id="page-home">
+    <div class="hero">
+      <p class="eyebrow">Internal toolkit</p>
+      <h1 class="page-title">Quick calculators for the sales &amp; ops team</h1>
+      <p class="page-sub">Three tools for the everyday fabric math: converting fabric weight units, turning one price into every price, and estimating roll and pallet shipping weights. Nothing is saved, everything runs in your browser.</p>
+    </div>
+    <div class="tool-cards">
+      <div class="tool-card" data-go="convert">
+        <span class="tc-num">01</span>
+        <h3>Unit Converter</h3>
+        <p>oz/yd&sup2;, g/m&sup2; (GSM), and oz/ft&sup2; linked together. Type in any one to get the rest.</p>
+        <span class="go">Open converter &rarr;</span>
+      </div>
+      <div class="tool-card" data-go="pricing">
+        <span class="tc-num">02</span>
+        <h3>Pricing Converter</h3>
+        <p>Enter a price in any unit plus a width, and get linear yard, linear meter, square foot, square yard, and square meter prices.</p>
+        <span class="go">Open pricing &rarr;</span>
+      </div>
+      <div class="tool-card" data-go="roll">
+        <span class="tc-num">03</span>
+        <h3>Roll &amp; Pallet Weight</h3>
+        <p>Roll weight from GSM, size, and core. Then build a mixed pallet and get a printable shipping weight and dimensions.</p>
+        <span class="go">Open calculator &rarr;</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONVERTER -->
+  <section class="page" id="page-convert">
+    <p class="eyebrow">Tool 01</p>
+    <h1 class="page-title">Unit Converter</h1>
+    <p class="page-sub">Fabric weight across the three units we quote in. Edit any field and the other two update instantly.</p>
+
+    <div class="panel">
+      <h2 class="panel-title">Fabric weight</h2>
+      <p class="panel-desc">oz/yd&sup2; &harr; g/m&sup2; (GSM) &harr; oz/ft&sup2;</p>
+      <div class="grid cols-3">
+        <div class="field">
+          <label>oz / yd&sup2;</label>
+          <input type="text" inputmode="decimal" id="c_ozyd2" placeholder="e.g. 10.92" />
+          <button class="copy-btn" data-copy="c_ozyd2" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>g / m&sup2; (GSM)</label>
+          <input type="text" inputmode="decimal" id="c_gsm" placeholder="e.g. 370" />
+          <button class="copy-btn" data-copy="c_gsm" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>oz / ft&sup2;</label>
+          <input type="text" inputmode="decimal" id="c_ozft2" placeholder="e.g. 1.21" />
+          <button class="copy-btn" data-copy="c_ozft2" style="margin-top:8px;">Copy</button>
+        </div>
+      </div>
+      <div class="note">Tip: our product names carry the GSM. PPI-370 is 370 g/m&sup2;, which is about 10.92 oz/yd&sup2;.</div>
+
+      <details class="method">
+        <summary>Assumptions &amp; methodology</summary>
+        <div class="method-body">
+          <ul>
+            <li>1 oz/yd&sup2; = 33.906 g/m&sup2; (28.3495 g per ounce, 0.836127 m&sup2; per square yard).</li>
+            <li>1 yd&sup2; = 9 ft&sup2;, so oz/ft&sup2; = oz/yd&sup2; &divide; 9.</li>
+            <li>g/m&sup2; is shown as a whole number, ounce values to two decimals, so round trips may drift slightly.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="page" id="page-pricing">
+    <p class="eyebrow">Tool 02</p>
+    <h1 class="page-title">Pricing Converter</h1>
+    <p class="page-sub">Enter the roll width, then type a price into any box. Every other price recalculates. Works in any direction, so you can start from a square foot target and read back the linear yard price.</p>
+
+    <div class="panel">
+      <h2 class="panel-title">Price conversions</h2>
+      <p class="panel-desc">Full-width pricing. A linear yard is 36 inches long at the full roll width you enter.</p>
+
+      <div class="grid cols-2" style="margin-bottom:18px;">
+        <div class="field">
+          <label>Roll width <span class="hint">(inches, required)</span></label>
+          <input type="text" inputmode="decimal" id="p_width" placeholder="e.g. 61" />
+        </div>
+        <div></div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="field">
+          <label>$ / linear yard</label>
+          <input type="text" inputmode="decimal" id="p_ly" placeholder="0.0000" data-price />
+          <button class="copy-btn" data-copy="p_ly" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>$ / linear meter</label>
+          <input type="text" inputmode="decimal" id="p_lm" placeholder="0.0000" data-price />
+          <button class="copy-btn" data-copy="p_lm" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>$ / ft&sup2;</label>
+          <input type="text" inputmode="decimal" id="p_sf" placeholder="0.0000" data-price />
+          <button class="copy-btn" data-copy="p_sf" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>$ / yd&sup2;</label>
+          <input type="text" inputmode="decimal" id="p_sy" placeholder="0.0000" data-price />
+          <button class="copy-btn" data-copy="p_sy" style="margin-top:8px;">Copy</button>
+        </div>
+        <div class="field">
+          <label>$ / m&sup2;</label>
+          <input type="text" inputmode="decimal" id="p_sm" placeholder="0.0000" data-price />
+          <button class="copy-btn" data-copy="p_sm" style="margin-top:8px;">Copy</button>
+        </div>
+        <div></div>
+      </div>
+      <p class="hintline" id="p_hint">Enter a width to start converting.</p>
+
+      <details class="method">
+        <summary>Assumptions &amp; methodology</summary>
+        <div class="method-body">
+          <ul>
+            <li>Price is treated as full-width: the linear price already covers the entire roll width entered.</li>
+            <li>Linear yard area = width &times; 36 in. Linear meter area = width &times; 39.3701 in.</li>
+            <li>1 yd&sup2; = 1296 in&sup2;, 1 ft&sup2; = 144 in&sup2;, 1 m&sup2; = 1550.0031 in&sup2;.</li>
+            <li>All prices shown to four decimals. Nothing is stored or sent anywhere.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ROLL & PALLET -->
+  <section class="page" id="page-roll">
+    <p class="eyebrow">Tool 03</p>
+    <h1 class="page-title">Roll &amp; Pallet Weight</h1>
+    <p class="page-sub">Estimate a single roll weight, then build a mixed pallet for a shipping weight and dimensions you can print for a BOL or freight quote.</p>
+
+    <!-- Single roll -->
+    <div class="panel">
+      <h2 class="panel-title">Single roll weight</h2>
+      <p class="panel-desc">Pick a product to fill the GSM, or choose Manual and enter your own. Roll diameter is estimated for shipping, with an override if you know the actual.</p>
+
+      <div class="grid cols-3">
+        <div class="field">
+          <label>Product</label>
+          <select id="s_product"></select>
+        </div>
+        <div class="field">
+          <label>GSM <span class="hint">(g/m&sup2;)</span></label>
+          <input type="text" inputmode="decimal" id="s_gsm" placeholder="e.g. 370" />
+        </div>
+        <div class="field">
+          <label>Core</label>
+          <select id="s_core">
+            <option value="3">3 in paper core</option>
+            <option value="6">6 in paper core</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Roll width <span class="hint">(inches)</span></label>
+          <input type="text" inputmode="decimal" id="s_width" placeholder="e.g. 61" />
+        </div>
+        <div class="field">
+          <label>Roll length <span class="hint">(yards)</span></label>
+          <input type="text" inputmode="decimal" id="s_length" placeholder="e.g. 100" />
+        </div>
+        <div class="field">
+          <label>Diameter override <span class="hint">(in, optional)</span></label>
+          <input type="text" inputmode="decimal" id="s_diaoverride" placeholder="auto" />
+        </div>
+      </div>
+
+      <div class="grid cols-2" id="s_manualcore" style="margin-top:16px;display:none;">
+        <div class="field">
+          <label>Manual core outer diameter <span class="hint">(in)</span></label>
+          <input type="text" inputmode="decimal" id="s_coreod" placeholder="e.g. 3.5" />
+        </div>
+        <div class="field">
+          <label>Manual core weight <span class="hint">(lb)</span></label>
+          <input type="text" inputmode="decimal" id="s_coreweight" placeholder="e.g. 4.5" />
+        </div>
+      </div>
+
+      <div class="readout" style="margin-top:18px;">
+        <div class="readout-row">
+          <div class="rk">Fabric weight</div>
+          <div class="readout-val"><span class="num" id="s_fabric">&mdash;</span></div>
+        </div>
+        <div class="readout-row">
+          <div class="rk">Core weight</div>
+          <div class="readout-val"><span class="num" id="s_corewt">&mdash;</span></div>
+        </div>
+        <div class="readout-row">
+          <div class="rk">Estimated roll diameter</div>
+          <div class="readout-val"><span class="num" id="s_dia">&mdash;</span></div>
+        </div>
+        <div class="readout-row big">
+          <div class="rk">Total roll weight</div>
+          <div class="readout-val">
+            <span class="num" id="s_total">&mdash;</span>
+            <button class="copy-btn" data-copytext="s_total">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="method">
+        <summary>Assumptions &amp; methodology</summary>
+        <div class="method-body">
+          <p>Fabric weight = GSM &times; roll area, converted to pounds. Width converts at 0.0254 m/in, length at 0.9144 m/yd, weight at 2.20462 lb/kg.</p>
+          <p>Core weight is estimated as a paperboard tube. A 3 in core is 3.0 in inside diameter with a 0.25 in wall (3.5 in outside). A 6 in core is 6.0 in inside diameter with a 0.5 in wall (7.0 in outside). Core length equals the roll width.</p>
+          <p>Roll diameter = &radic;(core OD&sup2; + 4 &times; thickness &times; length &divide; &pi;), wound outward from the core. Thickness comes from the selected product, defaulting to 22 mil when unknown.</p>
+          <div class="dens-field">
+            <label style="margin:0;font-size:12.5px;font-weight:700;color:var(--green-deep);">Paperboard density (g/cm&sup3;)</label>
+            <input type="text" inputmode="decimal" id="density" value="0.80" />
+          </div>
+          <p style="margin-top:8px;">Industrial winding cores typically run 0.70 to 0.90 g/cm&sup3;. 0.80 is a middle estimate. Adjust if you have a measured core weight, or use Manual core to enter the weight directly.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Pallet builder -->
+    <div class="panel">
+      <h2 class="panel-title">Pallet builder</h2>
+      <p class="panel-desc">Add each roll type going on the pallet. Mix products freely, for example two PPI-370 at 61 in by 100 yd plus one Flex-270 at 98 in by 200 yd.</p>
+
+      <div id="rollRows"></div>
+      <button class="add-btn" id="addRoll">+ Add roll type</button>
+
+      <div class="grid cols-3" style="margin-top:22px;">
+        <div class="field">
+          <label>Pallet type</label>
+          <select id="palletType">
+            <option value="std">Standard 40 x 48 (50 lb)</option>
+            <option value="long">Long 96 x 48 (100 lb)</option>
+            <option value="xl">XL 80 x 80 (150 lb)</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Rolls across the bottom <span class="hint">(3 to 5)</span></label>
+          <input type="text" inputmode="numeric" id="rollsAcross" value="4" />
+        </div>
+        <div class="field">
+          <label>Pallet deck height <span class="hint">(in)</span></label>
+          <input type="text" inputmode="decimal" id="deckHeight" value="6" />
+        </div>
+      </div>
+
+      <div class="grid cols-3" id="manualPallet" style="margin-top:16px;display:none;">
+        <div class="field">
+          <label>Pallet length <span class="hint">(in)</span></label>
+          <input type="text" inputmode="decimal" id="palLen" placeholder="e.g. 48" />
+        </div>
+        <div class="field">
+          <label>Pallet width <span class="hint">(in)</span></label>
+          <input type="text" inputmode="decimal" id="palWid" placeholder="e.g. 40" />
+        </div>
+        <div class="field">
+          <label>Pallet tare weight <span class="hint">(lb)</span></label>
+          <input type="text" inputmode="decimal" id="palTare" placeholder="e.g. 50" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:16px;max-width:420px;">
+        <label><input type="checkbox" id="pyramidOn" style="width:auto;display:inline;margin-right:8px;vertical-align:middle;" />Pyramid stacked (enter total height manually)</label>
+        <input type="text" inputmode="decimal" id="pyramidH" placeholder="total stack height in inches" style="margin-top:8px;display:none;" />
+      </div>
+
+      <div class="pallet-totals" style="margin-top:22px;">
+        <div class="tot-card">
+          <div class="tk">Total shipping weight</div>
+          <div class="tv"><span id="t_shipwt">&mdash;</span> <span class="tu">lb</span></div>
+        </div>
+        <div class="tot-card">
+          <div class="tk">Estimated dimensions (L x W x H)</div>
+          <div class="tv" style="font-size:20px;" id="t_dims">&mdash;</div>
+        </div>
+      </div>
+
+      <div class="readout" style="margin-top:16px;">
+        <div class="readout-row">
+          <div class="rk">Rolls on pallet</div>
+          <div class="readout-val"><span class="num" id="t_count">&mdash;</span></div>
+        </div>
+        <div class="readout-row">
+          <div class="rk">Total roll weight <small>fabric plus cores</small></div>
+          <div class="readout-val"><span class="num" id="t_rollwt">&mdash;</span></div>
+        </div>
+        <div class="readout-row">
+          <div class="rk">Pallet tare</div>
+          <div class="readout-val"><span class="num" id="t_tare">&mdash;</span></div>
+        </div>
+        <div class="readout-row">
+          <div class="rk">Layers <small>rolls across, then stacked up</small></div>
+          <div class="readout-val"><span class="num" id="t_layers">&mdash;</span></div>
+        </div>
+      </div>
+
+      <button class="print-action" id="printBtn">Print shipping summary</button>
+
+      <div class="flag" id="pyramidNote">Heads up: this estimate assumes rolls laid flat in even layers. If the load is pyramid stacked or nested, tick the pyramid box above and enter the real height.</div>
+
+      <details class="method">
+        <summary>Assumptions &amp; methodology</summary>
+        <div class="method-body">
+          <ul>
+            <li>Shipping weight = sum of all roll weights (fabric plus cores) plus the pallet tare.</li>
+            <li>Rolls are assumed laid flat. The bottom layer holds the "rolls across" count, then layers stack upward. Layers = total rolls &divide; rolls across, rounded up.</li>
+            <li>Length = the longest roll width or the pallet length, whichever is greater.</li>
+            <li>Width = the pallet width, or rolls across &times; largest roll diameter if that is wider.</li>
+            <li>Height = pallet deck height + layers &times; largest roll diameter. The largest diameter is used so the estimate stays conservative across mixed rolls.</li>
+            <li>Tare weights: Standard 50 lb, Long 100 lb, XL 150 lb, or your manual entry.</li>
+            <li>For pyramid or nested loads, tick the box and enter the measured height.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span>Internal tool &bull; Renegade Plastics Corporation</span>
+    <span>Estimates only. Verify critical shipments before quoting.</span>
+  </div>
+</footer>
+
+<!-- Print summary target -->
+<div id="printSummary"></div>
+
+<script>
+/* ---------- Product data (public: GSM from name; mil used silently for diameter) ---------- */
+var PRODUCTS = {
+  "PPI-200":{gsm:200,mil:11}, "PPI-270":{gsm:270,mil:18}, "PPI-300":{gsm:300,mil:17},
+  "PPI-370":{gsm:370,mil:21}, "PPI-420":{gsm:420,mil:22}, "PPI-550":{gsm:550,mil:22},
+  "Flex-200":{gsm:200,mil:22}, "Flex-270":{gsm:270,mil:17}, "Flex-320":{gsm:320,mil:22},
+  "Flex-370":{gsm:370,mil:23},
+  "PPC-210":{gsm:210,mil:15}, "PPC-230":{gsm:230,mil:17}, "PPC-270":{gsm:270,mil:18},
+  "PPC-370":{gsm:370,mil:22}, "PPC-420":{gsm:420,mil:22},
+  "Mesh-215":{gsm:215,mil:42}, "Hydro-370":{gsm:370,mil:22}
+};
+var DEFAULT_MIL = 22;
+var PALLETS = {
+  std:{len:48,wid:40,tare:50}, long:{len:96,wid:48,tare:100}, xl:{len:80,wid:80,tare:150}
+};
+
+/* ---------- Helpers ---------- */
+function $(id){return document.getElementById(id);}
+function num(v){var n=parseFloat(v);return isFinite(n)?n:NaN;}
+function fmt(n,d){if(!isFinite(n))return "";return n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});}
+function productOptions(selected){
+  var s='<option value="MANUAL">Manual / Other</option>';
+  for(var k in PRODUCTS){s+='<option value="'+k+'"'+(k===selected?' selected':'')+'>'+k+'</option>';}
+  return s;
+}
+function getDensity(){var d=num($("density").value);return isFinite(d)&&d>0?d:0.80;}
+
+/* core: returns {od, wt} in inches/lb. caliper in mil, width in inches */
+function coreInfo(type, width_in, density, manualOD, manualWt){
+  if(type==="manual"){
+    return {od:isFinite(manualOD)?manualOD:3.5, wt:isFinite(manualWt)?manualWt:0};
+  }
+  var dims = type==="6" ? {ID:6,OD:7} : {ID:3,OD:3.5};
+  var annulus = Math.PI/4*(dims.OD*dims.OD - dims.ID*dims.ID); // in^2
+  var vol_in3 = annulus * width_in;
+  var vol_cm3 = vol_in3 * 16.387064;
+  var g = vol_cm3 * density;
+  return {od:dims.OD, wt:g/453.59237};
+}
+function fabricLb(gsm,width_in,length_yd){
+  var area = (width_in*0.0254)*(length_yd*0.9144); // m^2
+  return gsm*area/1000*2.20462262;
+}
+function rollDia(coreOD,caliper_mil,length_yd){
+  var t=caliper_mil/1000, Lin=length_yd*36;
+  return Math.sqrt(coreOD*coreOD + 4*t*Lin/Math.PI);
+}
+
+/* ---------- Routing ---------- */
+function go(page){
+  var pages=document.querySelectorAll(".page");
+  for(var i=0;i<pages.length;i++){pages[i].classList.remove("active");}
+  var el=$("page-"+page); if(!el){el=$("page-home");page="home";}
+  el.classList.add("active");
+  var tabs=document.querySelectorAll(".nav-tab");
+  for(var j=0;j<tabs.length;j++){tabs[j].classList.toggle("active",tabs[j].getAttribute("data-go")===page);}
+  if(location.hash!=="#"+page){history.replaceState(null,"","#"+page);}
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",function(e){
+  var t=e.target.closest("[data-go]");
+  if(t){go(t.getAttribute("data-go"));}
+});
+window.addEventListener("hashchange",function(){go((location.hash||"#home").slice(1));});
+
+/* ---------- Copy buttons ---------- */
+function flashCopy(btn){
+  var old=btn.textContent;btn.textContent="Copied";btn.classList.add("done");
+  setTimeout(function(){btn.textContent=old;btn.classList.remove("done");},1100);
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-copy]");
+  if(b){var v=$(b.getAttribute("data-copy")).value||"";copyText(v,b);return;}
+  var bt=e.target.closest("[data-copytext]");
+  if(bt){var node=$(bt.getAttribute("data-copytext"));copyText(node?node.textContent.replace(/\u2014/g,"").trim():"",bt);}
+});
+function copyText(text,btn){
+  if(!text){return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){flashCopy(btn);}).catch(function(){fallbackCopy(text,btn);});
+  }else{fallbackCopy(text,btn);}
+}
+function fallbackCopy(text,btn){
+  var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");flashCopy(btn);}catch(err){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- Tool 01: converter ---------- */
+var K=33.905747; // oz/yd2 -> gsm
+function convFrom(src){
+  var a=$("c_ozyd2"),g=$("c_gsm"),f=$("c_ozft2");
+  if(src==="ozyd2"){
+    var v=num(a.value); if(!isFinite(v)){g.value="";f.value="";return;}
+    g.value=fmt(Math.round(v*K),0); f.value=fmt(v/9,2);
+  }else if(src==="gsm"){
+    var vg=num(g.value); if(!isFinite(vg)){a.value="";f.value="";return;}
+    var oz=vg/K; a.value=fmt(oz,2); f.value=fmt(oz/9,2);
+  }else{
+    var vf=num(f.value); if(!isFinite(vf)){a.value="";g.value="";return;}
+    var ozy=vf*9; a.value=fmt(ozy,2); g.value=fmt(Math.round(ozy*K),0);
+  }
+}
+$("c_ozyd2").addEventListener("input",function(){convFrom("ozyd2");});
+$("c_gsm").addEventListener("input",function(){convFrom("gsm");});
+$("c_ozft2").addEventListener("input",function(){convFrom("ozft2");});
+
+/* ---------- Tool 02: pricing ---------- */
+var M2_IN2=1550.0031, IN_PER_M=39.3700787;
+var lastPrice=null;
+function priceFrom(src){
+  lastPrice=src;
+  var w=num($("p_width").value);
+  var val=num($(("p_"+src)).value);
+  var fields=["ly","lm","sf","sy","sm"];
+  if(!isFinite(w)||w<=0){
+    $("p_hint").textContent="Enter a width to start converting.";
+    return;
+  }
+  if(!isFinite(val)){
+    for(var i=0;i<fields.length;i++){if(fields[i]!==src){$("p_"+fields[i]).value="";}}
+    $("p_hint").textContent="";
+    return;
+  }
+  var pIn; // $ per in^2
+  if(src==="ly")pIn=val/(36*w);
+  else if(src==="lm")pIn=val/(IN_PER_M*w);
+  else if(src==="sf")pIn=val/144;
+  else if(src==="sy")pIn=val/1296;
+  else pIn=val/M2_IN2;
+  var out={ly:pIn*36*w, lm:pIn*IN_PER_M*w, sf:pIn*144, sy:pIn*1296, sm:pIn*M2_IN2};
+  for(var j=0;j<fields.length;j++){var k=fields[j];if(k!==src){$("p_"+k).value=fmt(out[k],4);}}
+  $("p_hint").textContent="";
+}
+["ly","lm","sf","sy","sm"].forEach(function(k){
+  $("p_"+k).addEventListener("input",function(){priceFrom(k);});
+});
+$("p_width").addEventListener("input",function(){
+  if(lastPrice){priceFrom(lastPrice);}
+  else{
+    var fields=["ly","lm","sf","sy","sm"];
+    for(var i=0;i<fields.length;i++){if($("p_"+fields[i]).value!==""){priceFrom(fields[i]);return;}}
+    var w=num($("p_width").value);
+    $("p_hint").textContent=(isFinite(w)&&w>0)?"":"Enter a width to start converting.";
+  }
+});
+
+/* ---------- Tool 03: single roll ---------- */
+$("s_product").innerHTML=productOptions("PPI-370");
+var singleCaliper=PRODUCTS["PPI-370"].mil;
+$("s_gsm").value="370";
+function syncSingleProduct(){
+  var p=$("s_product").value;
+  if(p==="MANUAL"){singleCaliper=DEFAULT_MIL;}
+  else{singleCaliper=PRODUCTS[p].mil;$("s_gsm").value=PRODUCTS[p].gsm;}
+  calcSingle();
+}
+function toggleManualCore(){
+  $("s_manualcore").style.display = $("s_core").value==="manual" ? "grid" : "none";
+}
+function calcSingle(){
+  var gsm=num($("s_gsm").value), w=num($("s_width").value), L=num($("s_length").value);
+  var core=$("s_core").value, dens=getDensity();
+  var ci=coreInfo(core,w,dens,num($("s_coreod").value),num($("s_coreweight").value));
+  if(!isFinite(gsm)||!isFinite(w)||!isFinite(L)||w<=0||L<=0){
+    $("s_fabric").innerHTML="&mdash;";$("s_corewt").innerHTML="&mdash;";
+    $("s_dia").innerHTML="&mdash;";$("s_total").innerHTML="&mdash;";return;
+  }
+  var fab=fabricLb(gsm,w,L);
+  var dia=num($("s_diaoverride").value);
+  if(!isFinite(dia)||dia<=0){dia=rollDia(ci.od,singleCaliper,L);}
+  var corewt=ci.wt;
+  $("s_fabric").textContent=fmt(fab,1)+" lb";
+  $("s_corewt").textContent=fmt(corewt,1)+" lb";
+  $("s_dia").textContent=fmt(dia,1)+" in";
+  $("s_total").textContent=fmt(fab+corewt,1)+" lb";
+}
+$("s_product").addEventListener("change",syncSingleProduct);
+$("s_core").addEventListener("change",function(){toggleManualCore();calcSingle();});
+["s_gsm","s_width","s_length","s_diaoverride","s_coreod","s_coreweight","density"]
+  .forEach(function(id){$(id).addEventListener("input",calcSingle);});
+
+/* ---------- Tool 03: pallet builder ---------- */
+var rowSeq=0;
+function rollRowHTML(id){
+  return ''+
+  '<div class="rr-grid">'+
+    '<div class="field"><label>Product</label><select data-f="product">'+productOptions("PPI-370")+'</select></div>'+
+    '<div class="field"><label>GSM</label><input type="text" inputmode="decimal" data-f="gsm" value="370" /></div>'+
+    '<div class="field"><label>Width (in)</label><input type="text" inputmode="decimal" data-f="width" placeholder="61" /></div>'+
+    '<div class="field"><label>Length (yd)</label><input type="text" inputmode="decimal" data-f="length" placeholder="100" /></div>'+
+    '<div class="field"><label>Qty</label><input type="text" inputmode="numeric" data-f="qty" value="1" /></div>'+
+  '</div>'+
+  '<div class="rr-grid" style="margin-top:12px;">'+
+    '<div class="field"><label>Core</label><select data-f="core"><option value="3">3 in core</option><option value="6">6 in core</option><option value="manual">Manual</option></select></div>'+
+    '<div class="field" data-manual style="display:none;"><label>Core OD (in)</label><input type="text" inputmode="decimal" data-f="coreod" placeholder="3.5" /></div>'+
+    '<div class="field" data-manual style="display:none;"><label>Core wt (lb)</label><input type="text" inputmode="decimal" data-f="coreweight" placeholder="4.5" /></div>'+
+    '<div></div>'+
+    '<div class="field" style="display:flex;align-items:flex-end;"><button class="remove-btn" data-remove>Remove</button></div>'+
+  '</div>'+
+  '<div class="rr-out">'+
+    '<span>Per roll: <b data-o="perroll">&mdash;</b></span>'+
+    '<span>Line total: <b data-o="line">&mdash;</b></span>'+
+    '<span>Diameter: <b data-o="dia">&mdash;</b></span>'+
+  '</div>';
+}
+function addRollRow(){
+  var div=document.createElement("div");
+  div.className="roll-row";
+  div.id="rr-"+(rowSeq++);
+  div.setAttribute("data-caliper",PRODUCTS["PPI-370"].mil);
+  div.innerHTML=rollRowHTML(div.id);
+  $("rollRows").appendChild(div);
+  // wire events
+  div.querySelector('[data-f="product"]').addEventListener("change",function(){
+    var p=this.value;
+    if(p==="MANUAL"){div.setAttribute("data-caliper",DEFAULT_MIL);}
+    else{div.setAttribute("data-caliper",PRODUCTS[p].mil);div.querySelector('[data-f="gsm"]').value=PRODUCTS[p].gsm;}
+    calcPallet();
+  });
+  div.querySelector('[data-f="core"]').addEventListener("change",function(){
+    var manual=this.value==="manual";
+    var mf=div.querySelectorAll('[data-manual]');
+    for(var i=0;i<mf.length;i++){mf[i].style.display=manual?"block":"none";}
+    calcPallet();
+  });
+  div.querySelector('[data-remove]').addEventListener("click",function(){
+    div.parentNode.removeChild(div);calcPallet();
+  });
+  var inputs=div.querySelectorAll("input,select");
+  for(var i=0;i<inputs.length;i++){inputs[i].addEventListener("input",calcPallet);}
+  calcPallet();
+}
+function readRows(){
+  var rows=[],els=document.querySelectorAll(".roll-row");
+  for(var i=0;i<els.length;i++){
+    var d=els[i];
+    function v(f){var e=d.querySelector('[data-f="'+f+'"]');return e?e.value:"";}
+    rows.push({
+      el:d,
+      gsm:num(v("gsm")), width:num(v("width")), length:num(v("length")),
+      qty:Math.max(0,Math.round(num(v("qty"))||0)),
+      core:v("core"), coreod:num(v("coreod")), coreweight:num(v("coreweight")),
+      caliper:num(d.getAttribute("data-caliper"))||DEFAULT_MIL
+    });
+  }
+  return rows;
+}
+function syncManualPallet(){
+  $("manualPallet").style.display = $("palletType").value==="manual" ? "grid" : "none";
+}
+function calcPallet(){
+  var dens=getDensity();
+  var rows=readRows();
+  var totalRollWt=0, count=0, maxD=0, maxLen=0, valid=false;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(!isFinite(r.gsm)||!isFinite(r.width)||!isFinite(r.length)||r.width<=0||r.length<=0||r.qty<=0){
+      setRowOut(r.el,null);continue;
+    }
+    valid=true;
+    var ci=coreInfo(r.core,r.width,dens,r.coreod,r.coreweight);
+    var per=fabricLb(r.gsm,r.width,r.length)+ci.wt;
+    var dia=rollDia(ci.od,r.caliper,r.length);
+    var line=per*r.qty;
+    totalRollWt+=line; count+=r.qty;
+    if(dia>maxD)maxD=dia;
+    if(r.width>maxLen)maxLen=r.width;
+    setRowOut(r.el,{per:per,line:line,dia:dia});
+  }
+  // pallet
+  var ptype=$("palletType").value, pal;
+  if(ptype==="manual"){
+    pal={len:num($("palLen").value)||0, wid:num($("palWid").value)||0, tare:num($("palTare").value)||0};
+  }else{pal=PALLETS[ptype];}
+  var across=Math.max(1,Math.round(num($("rollsAcross").value)||4));
+  var deck=num($("deckHeight").value); if(!isFinite(deck))deck=6;
+
+  var layers = count>0 ? Math.ceil(count/across) : 0;
+  var L = Math.max(pal.len, maxLen);
+  var W = Math.max(pal.wid, across*maxD);
+  var H;
+  if($("pyramidOn").checked){var ph=num($("pyramidH").value);H=isFinite(ph)?ph:NaN;}
+  else{H=deck + layers*maxD;}
+
+  var ship = valid ? totalRollWt + pal.tare : NaN;
+
+  $("t_shipwt").textContent = isFinite(ship)?fmt(ship,1):"\u2014";
+  $("t_rollwt").textContent = valid?fmt(totalRollWt,1)+" lb":"\u2014";
+  $("t_tare").textContent   = valid?fmt(pal.tare,1)+" lb":"\u2014";
+  $("t_count").textContent  = valid?count+(count===1?" roll":" rolls"):"\u2014";
+  $("t_layers").textContent = valid?layers+(layers===1?" layer":" layers"):"\u2014";
+  if(valid && isFinite(L)&&isFinite(W)&&isFinite(H)){
+    $("t_dims").textContent = fmt(L,1)+" x "+fmt(W,1)+" x "+fmt(H,1)+" in";
+  }else if(valid && $("pyramidOn").checked && !isFinite(H)){
+    $("t_dims").textContent = "enter stack height";
+  }else{
+    $("t_dims").innerHTML="&mdash;";
+  }
+}
+function setRowOut(el,o){
+  var p=el.querySelector('[data-o="perroll"]'),l=el.querySelector('[data-o="line"]'),d=el.querySelector('[data-o="dia"]');
+  if(!o){p.innerHTML="&mdash;";l.innerHTML="&mdash;";d.innerHTML="&mdash;";return;}
+  p.textContent=fmt(o.per,1)+" lb";l.textContent=fmt(o.line,1)+" lb";d.textContent=fmt(o.dia,1)+" in";
+}
+$("addRoll").addEventListener("click",addRollRow);
+$("palletType").addEventListener("change",function(){syncManualPallet();calcPallet();});
+["rollsAcross","deckHeight","palLen","palWid","palTare","pyramidH"].forEach(function(id){
+  $(id).addEventListener("input",calcPallet);
+});
+$("pyramidOn").addEventListener("change",function(){
+  $("pyramidH").style.display=this.checked?"block":"none";calcPallet();
+});
+
+/* ---------- Print summary ---------- */
+function buildPrint(){
+  var dens=getDensity();
+  var rows=readRows();
+  var body="", totalRollWt=0, count=0, maxD=0, maxLen=0;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(!isFinite(r.gsm)||!isFinite(r.width)||!isFinite(r.length)||r.qty<=0)continue;
+    var pname=r.el.querySelector('[data-f="product"]').value;
+    if(pname==="MANUAL")pname="Manual ("+fmt(r.gsm,0)+" gsm)";
+    var ci=coreInfo(r.core,r.width,dens,r.coreod,r.coreweight);
+    var per=fabricLb(r.gsm,r.width,r.length)+ci.wt;
+    var dia=rollDia(ci.od,r.caliper,r.length);
+    var line=per*r.qty;
+    totalRollWt+=line;count+=r.qty;
+    if(dia>maxD)maxD=dia; if(r.width>maxLen)maxLen=r.width;
+    body+='<tr><td>'+r.qty+'</td><td>'+pname+'</td><td class="num">'+fmt(r.width,0)+'</td><td class="num">'+fmt(r.length,0)+
+      '</td><td class="num">'+fmt(dia,1)+'</td><td class="num">'+fmt(per,1)+'</td><td class="num">'+fmt(line,1)+'</td></tr>';
+  }
+  var ptype=$("palletType").value, palName, pal;
+  if(ptype==="manual"){pal={len:num($("palLen").value)||0,wid:num($("palWid").value)||0,tare:num($("palTare").value)||0};palName="Manual";}
+  else{pal=PALLETS[ptype];palName={std:"Standard 40 x 48",long:"Long 96 x 48",xl:"XL 80 x 80"}[ptype];}
+  var across=Math.max(1,Math.round(num($("rollsAcross").value)||4));
+  var deck=num($("deckHeight").value); if(!isFinite(deck))deck=6;
+  var layers=count>0?Math.ceil(count/across):0;
+  var L=Math.max(pal.len,maxLen), W=Math.max(pal.wid,across*maxD);
+  var H = $("pyramidOn").checked ? num($("pyramidH").value) : deck+layers*maxD;
+  var ship=totalRollWt+pal.tare;
+  var dims = (count>0&&isFinite(H)) ? fmt(L,1)+' x '+fmt(W,1)+' x '+fmt(H,1)+' in' : 'see notes';
+  var now=new Date();
+
+  $("printSummary").innerHTML=
+    '<div class="ps-head"><h2>Renegade Plastics &mdash; Pallet Shipping Estimate</h2>'+
+    '<div class="ps-meta">Generated '+now.toLocaleString()+' &bull; Pallet: '+palName+'</div></div>'+
+    '<table><thead><tr><th>Qty</th><th>Product</th><th class="num">Width (in)</th><th class="num">Length (yd)</th>'+
+    '<th class="num">Dia (in)</th><th class="num">Per roll (lb)</th><th class="num">Line (lb)</th></tr></thead>'+
+    '<tbody>'+(body||'<tr><td colspan="7">No complete roll rows entered.</td></tr>')+'</tbody>'+
+    '<tbody class="ps-totals">'+
+      '<tr><td colspan="6">Total roll weight</td><td class="num">'+fmt(totalRollWt,1)+'</td></tr>'+
+      '<tr><td colspan="6">Pallet tare</td><td class="num">'+fmt(pal.tare,1)+'</td></tr>'+
+      '<tr><td colspan="6">Total shipping weight</td><td class="num">'+fmt(ship,1)+'</td></tr>'+
+    '</tbody></table>'+
+    '<p style="font-size:13px;color:#21382A;"><b>Rolls:</b> '+count+' &nbsp; <b>Layers:</b> '+layers+
+      ' ('+across+' across) &nbsp; <b>Estimated dimensions (L x W x H):</b> '+dims+'</p>'+
+    '<div class="ps-foot">Estimate assumes rolls laid flat in even layers; height = deck '+fmt(deck,0)+
+      ' in + layers x largest roll diameter. Core weight estimated at '+fmt(dens,2)+
+      ' g/cm&sup3; paperboard. Verify against scale weight before final BOL.</div>';
+}
+$("printBtn").addEventListener("click",function(){buildPrint();window.print();});
+
+/* ---------- Init ---------- */
+syncManualPallet();
+toggleManualCore();
+addRollRow();
+calcSingle();
+go((location.hash||"#home").slice(1));
+</script>
+</body>
+</html>
