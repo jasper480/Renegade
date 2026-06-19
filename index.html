@@ -202,6 +202,46 @@
   footer{border-top:1px solid var(--green-line);margin-top:8px;}
   .footer-inner{max-width:1000px;margin:0 auto;padding:20px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 
+  /* Jasper Tool (restricted) */
+  .jasper-tab{
+    position:fixed;right:10px;bottom:8px;z-index:15;
+    font-size:10px;letter-spacing:.5px;color:var(--muted);opacity:.1;
+    cursor:pointer;user-select:none;padding:4px 6px;background:transparent;
+  }
+  .jasper-tab:hover{opacity:.55;}
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(28,38,32,.5);z-index:40;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:#fff;border:1px solid var(--green-line);border-radius:12px;
+    padding:24px;width:100%;max-width:340px;box-shadow:0 12px 40px rgba(33,56,42,.25);
+  }
+  .modal-eyebrow{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);margin:0 0 4px;}
+  .modal-title{margin:0 0 14px;font-size:18px;color:var(--green-deep);}
+  .modal input{margin-bottom:6px;}
+  .pw-err{color:#C0504E;font-size:12.5px;min-height:16px;margin:0 0 10px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;}
+  .btn-ghost{border:1px solid var(--green-line);background:#fff;color:var(--muted);font-family:inherit;font-weight:700;font-size:13px;padding:9px 14px;border-radius:8px;cursor:pointer;}
+  .btn-ghost:hover{color:var(--green-deep);}
+  .btn-solid{border:none;background:var(--green);color:#fff;font-family:inherit;font-weight:700;font-size:13px;padding:9px 16px;border-radius:8px;cursor:pointer;}
+  .btn-solid:hover{background:var(--green-dark);}
+  .jasper-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+  .jbox{
+    background:var(--card);border:1px solid var(--green-line);border-radius:12px;padding:20px;
+    min-height:120px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);
+    cursor:pointer;transition:transform .12s ease,border-color .12s ease;text-decoration:none;
+  }
+  .jbox:hover{transform:translateY(-2px);border-color:var(--green);}
+  .jbox-num{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);}
+  .jbox-title{font-size:16px;font-weight:700;color:var(--green-deep);}
+  .jbox-sub{font-size:12.5px;color:var(--muted);margin-top:auto;}
+  .jbox.empty{cursor:default;background:var(--bg);border-style:dashed;box-shadow:none;}
+  .jbox.empty:hover{transform:none;border-color:var(--green-line);}
+  .jbox.empty .jbox-title{color:var(--muted);}
+  .backlink{color:var(--green);font-weight:700;font-size:13px;cursor:pointer;}
+
   /* Print summary */
   #printSummary{display:none;}
   @media print{
@@ -569,6 +609,26 @@
     </div>
   </section>
 
+  <!-- JASPER TOOL (restricted) -->
+  <section class="page" id="page-jasper">
+    <p class="eyebrow">Restricted</p>
+    <h1 class="page-title">Jasper Tool</h1>
+    <p class="page-sub">Internal utilities. Pick a tool below.</p>
+    <div class="jasper-grid">
+      <a class="jbox" href="Renegade_Shipment_Globe.html">
+        <span class="jbox-num">01</span>
+        <span class="jbox-title">Shipping Map</span>
+        <span class="jbox-sub">Open the shipment globe</span>
+      </a>
+      <div class="jbox empty"><span class="jbox-num">02</span><span class="jbox-title">Open slot</span><span class="jbox-sub">Coming soon</span></div>
+      <div class="jbox empty"><span class="jbox-num">03</span><span class="jbox-title">Open slot</span><span class="jbox-sub">Coming soon</span></div>
+      <div class="jbox empty"><span class="jbox-num">04</span><span class="jbox-title">Open slot</span><span class="jbox-sub">Coming soon</span></div>
+      <div class="jbox empty"><span class="jbox-num">05</span><span class="jbox-title">Open slot</span><span class="jbox-sub">Coming soon</span></div>
+      <div class="jbox empty"><span class="jbox-num">06</span><span class="jbox-title">Open slot</span><span class="jbox-sub">Coming soon</span></div>
+    </div>
+    <p style="margin-top:20px;"><span class="backlink" data-go="home">&larr; Back to home</span></p>
+  </section>
+
 </div>
 
 <footer>
@@ -577,6 +637,21 @@
     <span>Estimates only. Verify critical shipments before quoting.</span>
   </div>
 </footer>
+
+<!-- Hidden restricted tab + password modal -->
+<div class="jasper-tab" id="jasperTab" data-go="jasper">Jasper Tool</div>
+<div class="modal-overlay" id="pwModal">
+  <div class="modal">
+    <p class="modal-eyebrow">Restricted</p>
+    <h3 class="modal-title">Enter password</h3>
+    <input type="password" id="pwInput" placeholder="Password" autocomplete="off" />
+    <p class="pw-err" id="pwErr"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="pwCancel">Cancel</button>
+      <button class="btn-solid" id="pwUnlock">Unlock</button>
+    </div>
+  </div>
+</div>
 
 <!-- Print summary target -->
 <div id="printSummary"></div>
@@ -630,13 +705,16 @@ function rollDia(coreOD,caliper_mil,length_yd){
 }
 
 /* ---------- Routing ---------- */
+var jasperUnlocked=false;
 function go(page){
+  if(page==="jasper" && !jasperUnlocked){ openPw(); page="home"; }
   var pages=document.querySelectorAll(".page");
   for(var i=0;i<pages.length;i++){pages[i].classList.remove("active");}
   var el=$("page-"+page); if(!el){el=$("page-home");page="home";}
   el.classList.add("active");
   var tabs=document.querySelectorAll(".nav-tab");
   for(var j=0;j<tabs.length;j++){tabs[j].classList.toggle("active",tabs[j].getAttribute("data-go")===page);}
+  var jt=$("jasperTab"); if(jt){jt.style.display=(page==="home")?"block":"none";}
   if(location.hash!=="#"+page){history.replaceState(null,"","#"+page);}
   window.scrollTo(0,0);
 }
@@ -944,6 +1022,22 @@ function buildPrint(){
       ' g/cm&sup3; paperboard. Verify against scale weight before final BOL.</div>';
 }
 $("printBtn").addEventListener("click",function(){buildPrint();window.print();});
+
+/* ---------- Jasper Tool password gate ---------- */
+function openPw(){
+  var m=$("pwModal"); m.classList.add("show");
+  $("pwInput").value=""; $("pwErr").textContent="";
+  setTimeout(function(){$("pwInput").focus();},50);
+}
+function closePw(){ $("pwModal").classList.remove("show"); }
+function tryPw(){
+  if($("pwInput").value==="Renegade"){ jasperUnlocked=true; closePw(); go("jasper"); }
+  else{ $("pwErr").textContent="Incorrect password."; $("pwInput").value=""; $("pwInput").focus(); }
+}
+$("pwUnlock").addEventListener("click",tryPw);
+$("pwCancel").addEventListener("click",closePw);
+$("pwInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){tryPw();} if(e.key==="Escape"){closePw();} });
+$("pwModal").addEventListener("click",function(e){ if(e.target===this){closePw();} });
 
 /* ---------- Init ---------- */
 syncManualPallet();
