@@ -153,7 +153,7 @@
 
   /* Home */
   .hero{padding:8px 0 6px;}
-  .tool-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:8px;}
+  .tool-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:8px;}
   .tool-card{
     background:var(--card);border:1px solid var(--green-line);border-radius:12px;padding:22px;
     cursor:pointer;box-shadow:var(--shadow);transition:transform .12s ease,border-color .12s ease;
@@ -242,6 +242,29 @@
   .jbox.empty .jbox-title{color:var(--muted);}
   .backlink{color:var(--green);font-weight:700;font-size:13px;cursor:pointer;}
 
+  /* Container loading */
+  .ct-radio{display:flex;gap:10px;flex-wrap:wrap;}
+  .ct-radio label{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:var(--green-deep);
+    border:1px solid var(--green-line);border-radius:8px;padding:9px 13px;cursor:pointer;background:#fff;margin:0;}
+  .ct-radio input{width:auto;margin:0;}
+  .ct-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:6px;}
+  .ct-card{background:var(--card);border:1px solid var(--green-line);border-radius:12px;padding:18px;box-shadow:var(--shadow);}
+  .ct-card h3{margin:0 0 2px;font-size:16px;color:var(--green-deep);}
+  .ct-card .ct-sub{font-size:11.5px;color:var(--muted);margin:0 0 12px;}
+  .ct-stat{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--green-line);}
+  .ct-stat:first-of-type{border-top:none;}
+  .ct-stat .k{font-size:12px;color:var(--muted);}
+  .ct-stat .v{font-size:16px;font-weight:700;color:var(--green-dark);font-variant-numeric:tabular-nums;text-align:right;}
+  .ct-headline{background:var(--green-tint);border:1px solid var(--green-line);border-radius:10px;padding:12px;margin-bottom:12px;text-align:center;}
+  .ct-headline .big{font-size:30px;font-weight:700;color:var(--green-dark);font-variant-numeric:tabular-nums;line-height:1;}
+  .ct-headline .lbl{font-size:11px;color:var(--muted);margin-top:3px;}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:20px;margin-top:6px;}
+  .badge.weight{background:#FBF4DF;color:#8A6D1F;border:1px solid #EBDBA8;}
+  .badge.space{background:#E6EEFB;color:#2F5597;border:1px solid #C4D5F2;}
+  .schematic-wrap{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start;}
+  .schematic-wrap svg{max-width:100%;height:auto;border:1px solid var(--green-line);border-radius:8px;background:#fff;}
+  .sch-cap{font-size:11.5px;color:var(--muted);margin:6px 0 0;text-align:center;}
+
   /* Print summary */
   #printSummary{display:none;}
   @media print{
@@ -265,6 +288,8 @@
     .grid.cols-2,.grid.cols-3{grid-template-columns:1fr;}
     .roll-row .rr-grid{grid-template-columns:1fr 1fr;}
     .pallet-totals{grid-template-columns:1fr;}
+    .ct-cards{grid-template-columns:1fr;}
+    .schematic-wrap{grid-template-columns:1fr;}
     h1.page-title{font-size:25px;}
   }
 </style>
@@ -282,6 +307,7 @@
       <div class="nav-tab" data-go="convert">Unit Converter</div>
       <div class="nav-tab" data-go="pricing">Pricing</div>
       <div class="nav-tab" data-go="roll">Roll &amp; Pallet Weight</div>
+      <div class="nav-tab" data-go="container">Container Loading</div>
     </div>
   </div>
 </nav>
@@ -293,7 +319,7 @@
     <div class="hero">
       <p class="eyebrow">Internal toolkit</p>
       <h1 class="page-title">Quick calculators for the sales &amp; ops team</h1>
-      <p class="page-sub">Three tools for the everyday fabric math: converting fabric weight units, turning one price into every price, and estimating roll and pallet shipping weights. Nothing is saved, everything runs in your browser.</p>
+      <p class="page-sub">Tools for the everyday fabric math: converting fabric weight units, turning one price into every price, estimating roll and pallet shipping weights, and planning shipping container loads. Nothing is saved, everything runs in your browser.</p>
     </div>
     <div class="tool-cards">
       <div class="tool-card" data-go="convert">
@@ -313,6 +339,12 @@
         <h3>Roll &amp; Pallet Weight</h3>
         <p>Roll weight from GSM, size, and core. Then build a mixed pallet and get a printable shipping weight and dimensions.</p>
         <span class="go">Open calculator &rarr;</span>
+      </div>
+      <div class="tool-card" data-go="container">
+        <span class="tc-num">04</span>
+        <h3>Container Loading</h3>
+        <p>Work out how many rolls fit in a 20 ft, 40 ft, or 40 HC container, whether weight or space is the limit, and how many containers a shipment needs.</p>
+        <span class="go">Open planner &rarr;</span>
       </div>
     </div>
   </section>
@@ -609,6 +641,79 @@
     </div>
   </section>
 
+  <!-- CONTAINER LOADING -->
+  <section class="page" id="page-container">
+    <p class="eyebrow">Tool 04</p>
+    <h1 class="page-title">Container Loading</h1>
+    <p class="page-sub">How many rolls fit per container, whether weight or space is the limit, and how many containers a shipment needs. Rolls load lengthwise and honeycomb-stacked, fork from the front.</p>
+
+    <div class="panel">
+      <h2 class="panel-title">Load settings</h2>
+      <div class="grid cols-3">
+        <div class="field">
+          <label>Max loaded weight <span class="hint">(lb, incl. container)</span></label>
+          <input type="text" inputmode="decimal" id="ct_maxwt" value="44000" />
+        </div>
+        <div class="field">
+          <label>Safety buffer <span class="hint">(%)</span></label>
+          <input type="text" inputmode="decimal" id="ct_buffer" value="5" />
+        </div>
+        <div class="field">
+          <label>Usable-space efficiency <span class="hint">(%)</span></label>
+          <input type="text" inputmode="decimal" id="ct_eff" value="90" />
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label>Loading method</label>
+        <div class="ct-radio">
+          <label><input type="radio" name="ct_method" value="loose" checked /> Loose, honeycomb</label>
+          <label><input type="radio" name="ct_method" value="pallet" /> Palletized</label>
+        </div>
+      </div>
+      <div class="grid cols-3" id="ct_palletopts" style="margin-top:16px;display:none;">
+        <div class="field"><label>Pallet type</label>
+          <select id="ct_pallettype">
+            <option value="std">Standard 40 x 48</option>
+            <option value="long">Long 96 x 48</option>
+            <option value="xl">XL 80 x 80</option>
+          </select>
+        </div>
+        <div class="field"><label>Rolls per pallet</label><input type="text" inputmode="numeric" id="ct_rollsperpallet" value="4" /></div>
+        <div class="field"><label>Pallet tiers high</label><select id="ct_tiers"><option value="1">1</option><option value="2">2</option></select></div>
+      </div>
+      <div class="note">The cap is the loaded container (cargo plus the container itself). The buffer comes off that, then the container tare is subtracted to get the cargo budget. So with the defaults, the budget is 44,000 minus 5%, minus each container's tare.</div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Fabrics to load</h2>
+      <p class="panel-desc">Add each fabric going in. With one fabric you get the max per container; add more fabrics and quantities to plan a full shipment.</p>
+      <div id="ctRows"></div>
+      <button class="add-btn" id="ctAddRow">+ Add fabric</button>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">By container</h2>
+      <p class="panel-desc">20 ft, 40 ft, and 40 ft HC side by side. The badge shows whether weight or space is the limit.</p>
+      <div class="ct-cards" id="ctCards"></div>
+    </div>
+
+    <div class="panel" id="ctSchematicPanel">
+      <h2 class="panel-title">Loading pattern</h2>
+      <div class="grid cols-3" style="margin-bottom:14px;">
+        <div class="field"><label>Show pattern for</label>
+          <select id="ct_schContainer">
+            <option value="c20">20 ft</option>
+            <option value="c40" selected>40 ft</option>
+            <option value="c40hc">40 ft HC</option>
+          </select>
+        </div>
+        <div></div><div></div>
+      </div>
+      <div class="schematic-wrap" id="ctSchematic"></div>
+      <p class="hintline" id="ctSchHint"></p>
+    </div>
+  </section>
+
   <!-- JASPER TOOL (restricted) -->
   <section class="page" id="page-jasper">
     <p class="eyebrow">Restricted</p>
@@ -893,7 +998,7 @@ function addRollRow(){
   calcPallet();
 }
 function readRows(){
-  var rows=[],els=document.querySelectorAll(".roll-row");
+  var rows=[],els=$("rollRows").querySelectorAll(".roll-row");
   for(var i=0;i<els.length;i++){
     var d=els[i];
     function v(f){var e=d.querySelector('[data-f="'+f+'"]');return e?e.value:"";}
@@ -1023,6 +1128,237 @@ function buildPrint(){
 }
 $("printBtn").addEventListener("click",function(){buildPrint();window.print();});
 
+/* ---------- Tool 04: container loading ---------- */
+var CONTAINERS = {
+  c20:{name:"20 ft", L:232, W:92, H:94, tare:5070},
+  c40:{name:"40 ft", L:474, W:92, H:94, tare:8265},
+  c40hc:{name:"40 ft HC", L:474, W:92, H:106, tare:8600}
+};
+var HEXPITCH=0.8660254;
+
+function ctSettings(){
+  var maxW=num($("ct_maxwt").value); if(!(maxW>0))maxW=44000;
+  var buf=num($("ct_buffer").value); if(!(buf>=0))buf=5;
+  var eff=num($("ct_eff").value); if(!(eff>0))eff=90;
+  var m=document.querySelector('input[name="ct_method"]:checked');
+  return {maxW:maxW, buf:buf/100, eff:eff/100, method:m?m.value:"loose"};
+}
+function hexCross(D,W,H){
+  if(!(D>0)||D>W+1e-6||D>H+1e-6) return {rows:0,nA:0,nB:0,count:0};
+  var nA=Math.floor(W/D);
+  var nB=Math.floor(W/D-0.5); if(nB<0)nB=0;
+  var rows=Math.floor(1+(H-D)/(HEXPITCH*D)); if(rows<1)rows=1;
+  var nBase=Math.ceil(rows/2), nOff=Math.floor(rows/2);
+  return {rows:rows,nA:nA,nB:nB,count:nBase*nA+nOff*nB,nBase:nBase,nOff:nOff};
+}
+
+/* fabric rows (reuse .roll-row styling, scoped to #ctRows) */
+function ctRowHTML(){
+  return ''+
+  '<div class="rr-grid">'+
+    '<div class="field"><label>Product</label><select data-f="product">'+productOptions("PPI-370")+'</select></div>'+
+    '<div class="field"><label>GSM</label><input type="text" inputmode="decimal" data-f="gsm" value="370" /></div>'+
+    '<div class="field"><label>Roll width (in)</label><input type="text" inputmode="decimal" data-f="width" placeholder="61" /></div>'+
+    '<div class="field"><label>Length (yd)</label><input type="text" inputmode="decimal" data-f="length" placeholder="100" /></div>'+
+    '<div class="field"><label>Qty</label><input type="text" inputmode="numeric" data-f="qty" value="1" /></div>'+
+  '</div>'+
+  '<div class="rr-grid" style="margin-top:12px;">'+
+    '<div class="field"><label>Core</label><select data-f="core"><option value="3">3 in core</option><option value="6">6 in core</option><option value="manual">Manual</option></select></div>'+
+    '<div class="field" data-manual style="display:none;"><label>Core OD (in)</label><input type="text" inputmode="decimal" data-f="coreod" placeholder="3.5" /></div>'+
+    '<div class="field" data-manual style="display:none;"><label>Core wt (lb)</label><input type="text" inputmode="decimal" data-f="coreweight" placeholder="4.5" /></div>'+
+    '<div></div>'+
+    '<div class="field" style="display:flex;align-items:flex-end;"><button class="remove-btn" data-remove>Remove</button></div>'+
+  '</div>'+
+  '<div class="rr-out">'+
+    '<span>Per roll: <b data-o="perroll">&mdash;</b></span>'+
+    '<span>Diameter: <b data-o="dia">&mdash;</b></span>'+
+  '</div>';
+}
+function addCtRow(){
+  var div=document.createElement("div");
+  div.className="roll-row"; div.setAttribute("data-caliper",PRODUCTS["PPI-370"].mil);
+  div.innerHTML=ctRowHTML();
+  $("ctRows").appendChild(div);
+  div.querySelector('[data-f="product"]').addEventListener("change",function(){
+    var p=this.value;
+    if(p==="MANUAL"){div.setAttribute("data-caliper",DEFAULT_MIL);}
+    else{div.setAttribute("data-caliper",PRODUCTS[p].mil);div.querySelector('[data-f="gsm"]').value=PRODUCTS[p].gsm;}
+    calcContainers();
+  });
+  div.querySelector('[data-f="core"]').addEventListener("change",function(){
+    var manual=this.value==="manual", mf=div.querySelectorAll('[data-manual]');
+    for(var i=0;i<mf.length;i++){mf[i].style.display=manual?"block":"none";}
+    calcContainers();
+  });
+  div.querySelector('[data-remove]').addEventListener("click",function(){div.parentNode.removeChild(div);calcContainers();});
+  var inputs=div.querySelectorAll("input,select");
+  for(var i=0;i<inputs.length;i++){inputs[i].addEventListener("input",calcContainers);}
+  calcContainers();
+}
+function readCtRows(){
+  var rows=[],els=$("ctRows").querySelectorAll(".roll-row");
+  for(var i=0;i<els.length;i++){
+    var d=els[i];
+    (function(d){
+      function v(f){var e=d.querySelector('[data-f="'+f+'"]');return e?e.value:"";}
+      rows.push({
+        el:d, gsm:num(v("gsm")), width:num(v("width")), length:num(v("length")),
+        qty:Math.max(0,Math.round(num(v("qty"))||0)),
+        core:v("core"), coreod:num(v("coreod")), coreweight:num(v("coreweight")),
+        caliper:num(d.getAttribute("data-caliper"))||DEFAULT_MIL
+      });
+    })(d);
+  }
+  return rows;
+}
+function ctRollData(r,dens){
+  var ci=coreInfo(r.core,r.width,dens,r.coreod,r.coreweight);
+  return {wt:fabricLb(r.gsm,r.width,r.length)+ci.wt, D:rollDia(ci.od,r.caliper,r.length), Lr:r.width, qty:r.qty, el:r.el};
+}
+function computeContainer(c,rows,st,dens){
+  var budget=st.maxW*(1-st.buf)-c.tare; if(budget<0)budget=0;
+  var res={budget:budget};
+  if(rows.length===0){res.empty=true;return res;}
+  var data=rows.map(function(r){return ctRollData(r,dens);});
+  var totalRolls=0,totalWt=0;
+  for(var i=0;i<data.length;i++){totalRolls+=data[i].qty;totalWt+=data[i].wt*data[i].qty;}
+
+  if(st.method==="pallet"){
+    var pal=PALLETS[$("ct_pallettype").value]||PALLETS.std;
+    var rpp=Math.max(1,Math.round(num($("ct_rollsperpallet").value)||4));
+    var tiers=Math.max(1,Math.round(num($("ct_tiers").value)||1));
+    var positions=Math.max(Math.floor(c.L/pal.len)*Math.floor(c.W/pal.wid), Math.floor(c.L/pal.wid)*Math.floor(c.W/pal.len));
+    var maxPallets=positions*tiers;
+    res.palletMode=true; res.positions=positions; res.tiers=tiers; res.rpp=rpp; res.maxPalletsGeo=maxPallets;
+    if(data.length===1){
+      var d=data[0], palWt=pal.tare+rpp*d.wt;
+      var maxPalWt=palWt>0?Math.floor(budget/palWt):0;
+      var palFinal=Math.max(0,Math.min(maxPallets,maxPalWt));
+      res.single=true; res.maxPallets=palFinal; res.maxRolls=palFinal*rpp;
+      res.binding=(maxPalWt<=maxPallets)?"weight":"space"; res.qty=d.qty;
+      res.containersNeeded=(d.qty>0&&res.maxRolls>0)?Math.ceil(d.qty/res.maxRolls):null;
+    }else{
+      var totalPallets=Math.ceil(totalRolls/rpp), totWt=totalWt+totalPallets*pal.tare;
+      var cByPal=maxPallets>0?Math.ceil(totalPallets/maxPallets):Infinity;
+      var cByWt=budget>0?Math.ceil(totWt/budget):Infinity;
+      res.single=false; res.totalPallets=totalPallets; res.maxPallets=maxPallets;
+      res.totalWt=totWt; res.containersNeeded=Math.max(cByPal,cByWt);
+      res.binding=(cByWt>=cByPal)?"weight":"space";
+    }
+    return res;
+  }
+
+  /* loose honeycomb */
+  if(data.length===1){
+    var d=data[0];
+    var deep=Math.floor(c.L/d.Lr);
+    var hx=hexCross(d.D,c.W,c.H);
+    var spaceMax=Math.max(0,Math.floor(hx.count*deep*st.eff));
+    var weightMax=d.wt>0?Math.floor(budget/d.wt):0;
+    var maxRolls=Math.max(0,Math.min(spaceMax,weightMax));
+    res.single=true; res.maxRolls=maxRolls; res.spaceMax=spaceMax; res.weightMax=weightMax;
+    res.binding=(weightMax<=spaceMax)?"weight":"space";
+    res.hx=hx; res.deep=deep; res.qty=d.qty;
+    res.containersNeeded=(d.qty>0&&maxRolls>0)?Math.ceil(d.qty/maxRolls):null;
+  }else{
+    var usable=c.L*c.W*c.H*st.eff, totalVol=0;
+    for(var j=0;j<data.length;j++){var dd=data[j];totalVol+=HEXPITCH*dd.D*dd.D*dd.Lr*dd.qty;}
+    var cByWt2=budget>0?Math.ceil(totalWt/budget):Infinity;
+    var cByVol=usable>0?Math.ceil(totalVol/usable):Infinity;
+    res.single=false; res.totalRolls=totalRolls; res.totalWt=totalWt;
+    res.containersNeeded=Math.max(cByWt2,cByVol); res.binding=(cByWt2>=cByVol)?"weight":"space";
+  }
+  return res;
+}
+function badgeTxt(b){return b==="weight"?"Weight-limited":"Space-limited";}
+function ctCardHTML(c,res){
+  var h='<div class="ct-card"><h3>'+c.name+'</h3><p class="ct-sub">'+fmt(c.L,0)+' x '+fmt(c.W,0)+' x '+fmt(c.H,0)+' in interior</p>';
+  if(res.empty){
+    h+='<div class="ct-stat"><span class="k">Cargo budget</span><span class="v">'+fmt(res.budget,0)+' lb</span></div>';
+    h+='<p class="ct-sub" style="margin-top:10px;">Add a fabric to see capacity.</p></div>'; return h;
+  }
+  var headline,lbl;
+  if(res.single){ headline=fmt(res.maxRolls,0); lbl=res.palletMode?('rolls max ('+fmt(res.maxPallets,0)+' pallets)'):'rolls max per container'; }
+  else { headline=fmt(res.containersNeeded,0); lbl=res.containersNeeded===1?'container for this shipment':'containers for this shipment'; }
+  h+='<div class="ct-headline"><div class="big">'+headline+'</div><div class="lbl">'+lbl+'</div><span class="badge '+res.binding+'">'+badgeTxt(res.binding)+'</span></div>';
+  h+='<div class="ct-stat"><span class="k">Cargo budget</span><span class="v">'+fmt(res.budget,0)+' lb</span></div>';
+  if(res.single&&!res.palletMode){
+    h+='<div class="ct-stat"><span class="k">Pattern</span><span class="v">'+res.hx.count+' across face, '+res.deep+' deep</span></div>';
+    h+='<div class="ct-stat"><span class="k">By space / by weight</span><span class="v">'+fmt(res.spaceMax,0)+' / '+fmt(res.weightMax,0)+'</span></div>';
+    if(res.containersNeeded!=null)h+='<div class="ct-stat"><span class="k">Containers for '+fmt(res.qty,0)+' rolls</span><span class="v">'+res.containersNeeded+'</span></div>';
+  }else if(res.single&&res.palletMode){
+    h+='<div class="ct-stat"><span class="k">Pallets per container</span><span class="v">'+fmt(res.maxPallets,0)+' ('+res.positions+' x '+res.tiers+' high)</span></div>';
+    if(res.containersNeeded!=null)h+='<div class="ct-stat"><span class="k">Containers for '+fmt(res.qty,0)+' rolls</span><span class="v">'+res.containersNeeded+'</span></div>';
+  }else{
+    h+='<div class="ct-stat"><span class="k">Total cargo</span><span class="v">'+fmt(res.totalWt,0)+' lb</span></div>';
+    if(res.palletMode)h+='<div class="ct-stat"><span class="k">Pallets needed / fit</span><span class="v">'+res.totalPallets+' / '+res.maxPallets+'</span></div>';
+  }
+  h+='</div>'; return h;
+}
+function updateCtRowOuts(dens){
+  var rows=readCtRows();
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i], p=r.el.querySelector('[data-o="perroll"]'), dEl=r.el.querySelector('[data-o="dia"]');
+    if(!(r.gsm>0&&r.width>0&&r.length>0)){p.innerHTML="&mdash;";dEl.innerHTML="&mdash;";continue;}
+    var dd=ctRollData(r,dens);
+    p.textContent=fmt(dd.wt,1)+" lb"; dEl.textContent=fmt(dd.D,1)+" in";
+  }
+}
+function calcContainers(){
+  var st=ctSettings(), dens=getDensity();
+  $("ct_palletopts").style.display=(st.method==="pallet")?"grid":"none";
+  updateCtRowOuts(dens);
+  var rows=readCtRows().filter(function(r){return r.gsm>0&&r.width>0&&r.length>0;});
+  var html="";
+  ["c20","c40","c40hc"].forEach(function(k){ html+=ctCardHTML(CONTAINERS[k], computeContainer(CONTAINERS[k],rows,st,dens)); });
+  $("ctCards").innerHTML=html;
+  renderSchematic(rows,st,dens);
+}
+function renderSchematic(rows,st,dens){
+  var wrap=$("ctSchematic"), hint=$("ctSchHint");
+  if(st.method!=="loose"){ wrap.innerHTML=""; hint.textContent="Schematic is shown for loose honeycomb loading."; return; }
+  if(rows.length!==1){ wrap.innerHTML=""; hint.textContent=(rows.length>1)?"Schematic is shown for single-fabric loads. Keep one fabric to see the pattern.":"Add a fabric to see the loading pattern."; return; }
+  var c=CONTAINERS[$("ct_schContainer").value], r=rows[0];
+  var ci=coreInfo(r.core,r.width,dens,r.coreod,r.coreweight);
+  var D=rollDia(ci.od,r.caliper,r.length), hx=hexCross(D,c.W,c.H), deep=Math.floor(c.L/r.width);
+  if(!(D>0)||hx.count===0||deep===0){ wrap.innerHTML=""; hint.textContent="This roll does not fit this container as entered."; return; }
+
+  /* front (end) view: circles hex-packed in W x H */
+  var fScale=300/c.W, fW=300, fH=c.H*fScale;
+  var f='<svg viewBox="0 0 '+fW.toFixed(1)+' '+fH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg">';
+  f+='<rect x="0" y="0" width="'+fW.toFixed(1)+'" height="'+fH.toFixed(1)+'" fill="#FAFBFA" stroke="#345A41" stroke-width="2"/>';
+  for(var row=1;row<=hx.rows;row++){
+    var yc=D/2+(row-1)*HEXPITCH*D;
+    var odd=(row%2===1), n=odd?hx.nA:hx.nB, x0=odd?D/2:D;
+    for(var i=0;i<n;i++){
+      var xc=x0+i*D;
+      f+='<circle cx="'+(xc*fScale).toFixed(1)+'" cy="'+((c.H-yc)*fScale).toFixed(1)+'" r="'+((D/2)*fScale).toFixed(1)+'" fill="#EDF3EE" stroke="#4A7C59" stroke-width="1"/>';
+    }
+  }
+  f+='</svg>';
+
+  /* top view: rolls run lengthwise; deep columns along L, nA across W */
+  var tScale=560/c.L, tW=560, tH=c.W*tScale, gap=1;
+  var t='<svg viewBox="0 0 '+tW.toFixed(1)+' '+tH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg">';
+  t+='<rect x="0" y="0" width="'+tW.toFixed(1)+'" height="'+tH.toFixed(1)+'" fill="#FAFBFA" stroke="#345A41" stroke-width="2"/>';
+  var rw=r.width*tScale, rd=D*tScale;
+  for(var k=0;k<deep;k++){
+    for(var a=0;a<hx.nA;a++){
+      t+='<rect x="'+(k*rw+gap).toFixed(1)+'" y="'+(a*rd+gap).toFixed(1)+'" width="'+(rw-2*gap).toFixed(1)+'" height="'+(rd-2*gap).toFixed(1)+'" rx="3" fill="#EDF3EE" stroke="#4A7C59" stroke-width="1"/>';
+    }
+  }
+  t+='</svg>';
+
+  wrap.innerHTML='<div><div style="width:300px;max-width:100%;">'+f+'</div><p class="sch-cap">Front view: '+hx.count+' rolls, honeycomb</p></div>'+
+                 '<div>'+t+'<p class="sch-cap">Top view: rolls run lengthwise, '+deep+' deep x '+hx.nA+' across</p></div>';
+  hint.textContent="Each end-face layer of "+hx.count+" rolls repeats "+deep+" deep down the "+fmt(c.L,0)+" in length. Roll diameter "+fmt(D,1)+" in.";
+}
+$("ctAddRow").addEventListener("click",addCtRow);
+["ct_maxwt","ct_buffer","ct_eff","ct_rollsperpallet"].forEach(function(id){$(id).addEventListener("input",calcContainers);});
+["ct_pallettype","ct_tiers","ct_schContainer"].forEach(function(id){$(id).addEventListener("change",calcContainers);});
+var ctRadios=document.querySelectorAll('input[name="ct_method"]');
+for(var ci2=0;ci2<ctRadios.length;ci2++){ctRadios[ci2].addEventListener("change",calcContainers);}
+
 /* ---------- Jasper Tool password gate ---------- */
 function openPw(){
   var m=$("pwModal"); m.classList.add("show");
@@ -1044,6 +1380,8 @@ syncManualPallet();
 toggleManualCore();
 addRollRow();
 calcSingle();
+addCtRow();
+calcContainers();
 go((location.hash||"#home").slice(1));
 </script>
 </body>
