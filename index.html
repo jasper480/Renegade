@@ -265,6 +265,30 @@
   .schematic-wrap svg{max-width:100%;height:auto;border:1px solid var(--green-line);border-radius:8px;background:#fff;}
   .sch-cap{font-size:11.5px;color:var(--muted);margin:6px 0 0;text-align:center;}
 
+  /* Inbound checklist */
+  .cl-text{width:100%;font-family:inherit;font-size:15px;color:var(--ink);padding:10px 12px;border:1px solid var(--green-line);border-radius:8px;background:#fff;}
+  .cl-text:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.16);}
+  textarea.cl-text{resize:vertical;min-height:64px;}
+  .cl-field{margin-bottom:14px;}
+  .cl-flabel{font-size:12.5px;font-weight:700;color:var(--green-deep);margin-bottom:6px;}
+  .chip-group{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+  .chip{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green-dark);background:#fff;border:1px solid var(--green-line);border-radius:20px;padding:7px 13px;cursor:pointer;}
+  .chip:hover{border-color:var(--green);}
+  .chip.sel{background:var(--green);color:#fff;border-color:var(--green);}
+  .chip-other{flex:0 0 auto;width:140px;font-family:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--green-line);border-radius:8px;}
+  .chip-other:focus{outline:none;border-color:var(--green);}
+  .cl-export{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  .cl-dock{position:fixed;top:0;right:0;bottom:0;width:var(--dockw,480px);background:#fff;border-left:3px solid var(--green);box-shadow:-8px 0 24px rgba(33,56,42,.12);z-index:30;display:none;flex-direction:column;}
+  .cl-dock-head{display:flex;align-items:center;justify-content:space-between;background:var(--green);color:#fff;padding:10px 12px;flex:0 0 auto;}
+  .cl-dock-title{font-weight:700;font-size:14px;letter-spacing:.3px;}
+  .cl-dock-controls{display:flex;gap:6px;}
+  .cl-dock-controls button{background:rgba(255,255,255,.16);border:none;color:#fff;font-family:inherit;font-weight:700;font-size:11.5px;padding:6px 9px;border-radius:6px;cursor:pointer;}
+  .cl-dock-controls button:hover{background:rgba(255,255,255,.32);}
+  .cl-dock-scroll{overflow-y:auto;padding:16px;flex:1 1 auto;}
+  .cl-edge-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;background:var(--green);color:#fff;font-weight:700;font-size:12px;letter-spacing:.6px;padding:14px 7px;border-radius:8px 0 0 8px;cursor:pointer;z-index:30;display:none;box-shadow:-3px 0 10px rgba(33,56,42,.18);}
+  body.cl-pushed{padding-right:var(--dockw,480px);}
+
   /* Print summary */
   #printSummary{display:none;}
   @media print{
@@ -292,7 +316,12 @@
     .schematic-wrap{grid-template-columns:1fr;}
     h1.page-title{font-size:25px;}
   }
+  @media (max-width:900px){
+    .cl-dock{width:100%;top:auto;height:64vh;border-left:none;border-top:3px solid var(--green);box-shadow:0 -8px 24px rgba(33,56,42,.16);}
+    body.cl-pushed{padding-right:0;}
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -308,6 +337,7 @@
       <div class="nav-tab" data-go="pricing">Pricing</div>
       <div class="nav-tab" data-go="roll">Roll &amp; Pallet Weight</div>
       <div class="nav-tab" data-go="container">Container Loading</div>
+      <div class="nav-tab" data-go="checklist">Inbound Checklist</div>
     </div>
   </div>
 </nav>
@@ -345,6 +375,12 @@
         <h3>Container Loading</h3>
         <p>Work out how many rolls fit in a 20 ft, 40 ft, or 40 HC container, whether weight or space is the limit, and how many containers a shipment needs.</p>
         <span class="go">Open planner &rarr;</span>
+      </div>
+      <div class="tool-card" data-go="checklist">
+        <span class="tc-num">05</span>
+        <h3>Inbound Checklist</h3>
+        <p>The call script and intake form, digital. Click to fill, it follows you to other tools as a side panel, and exports to PDF or Word for the HubSpot record.</p>
+        <span class="go">Open checklist &rarr;</span>
       </div>
     </div>
   </section>
@@ -714,6 +750,44 @@
     </div>
   </section>
 
+  <!-- INBOUND CHECKLIST -->
+  <section class="page" id="page-checklist">
+    <p class="eyebrow">Tool 05</p>
+    <h1 class="page-title">Inbound Call Checklist</h1>
+    <p class="page-sub">Fill this in during the call. Switch to another tool and it follows you as a side panel, so you can run numbers without losing your place. Export to PDF or Word at the bottom for the HubSpot record.</p>
+    <div style="margin-bottom:16px;"><button class="print-action" id="clPinBtn" style="margin-top:0;">Pin to side panel</button></div>
+
+    <div id="clPageHost">
+      <div id="checklistBody">
+        <details class="method" id="clScript" open>
+          <summary>Call script (not exported)</summary>
+          <div class="method-body">
+            <div class="cl-field" style="max-width:280px;">
+              <div class="cl-flabel">Script type</div>
+              <select class="cl-text" id="clScriptType"><option>Standard inbound</option></select>
+            </div>
+            <div id="clScriptText"></div>
+          </div>
+        </details>
+        <details class="method" id="clPrompts">
+          <summary>Conversation prompts (not exported)</summary>
+          <div class="method-body" id="clPromptsText"></div>
+        </details>
+        <div id="clForm"></div>
+        <div class="panel" style="margin-top:0;">
+          <h2 class="panel-title">Export</h2>
+          <p class="panel-desc">Script and prompts are left out of the export. Attach the file to the HubSpot record after the call.</p>
+          <div class="cl-export">
+            <button class="print-action" data-clx="pdf" style="margin-top:0;">Export PDF</button>
+            <button class="print-action" data-clx="word" style="margin-top:0;background:var(--green-dark);">Export Word</button>
+            <button class="copy-btn" data-clx="copy" style="padding:11px 15px;">Copy text</button>
+            <button class="remove-btn" data-clx="reset" style="padding:11px 15px;">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- JASPER TOOL (restricted) -->
   <section class="page" id="page-jasper">
     <p class="eyebrow">Restricted</p>
@@ -742,6 +816,21 @@
     <span>Estimates only. Verify critical shipments before quoting.</span>
   </div>
 </footer>
+
+<!-- Inbound checklist dock + edge tab -->
+<div class="cl-dock" id="checklistDock">
+  <div class="cl-dock-head">
+    <span class="cl-dock-title">Inbound Call</span>
+    <div class="cl-dock-controls">
+      <button data-cl="width">Width</button>
+      <button data-cl="full">Full page</button>
+      <button data-cl="collapse">Min</button>
+      <button data-cl="close">Close</button>
+    </div>
+  </div>
+  <div class="cl-dock-scroll" id="clDockHost"></div>
+</div>
+<div class="cl-edge-tab" id="clEdgeTab">Inbound Call</div>
 
 <!-- Hidden restricted tab + password modal -->
 <div class="jasper-tab" id="jasperTab" data-go="jasper">Jasper Tool</div>
@@ -811,6 +900,7 @@ function rollDia(coreOD,caliper_mil,length_yd){
 
 /* ---------- Routing ---------- */
 var jasperUnlocked=false;
+var currentPage="home", checklistActive=false, dockWidth="half", dockCollapsed=false;
 function go(page){
   if(page==="jasper" && !jasperUnlocked){ openPw(); page="home"; }
   var pages=document.querySelectorAll(".page");
@@ -820,6 +910,9 @@ function go(page){
   var tabs=document.querySelectorAll(".nav-tab");
   for(var j=0;j<tabs.length;j++){tabs[j].classList.toggle("active",tabs[j].getAttribute("data-go")===page);}
   var jt=$("jasperTab"); if(jt){jt.style.display=(page==="home")?"block":"none";}
+  currentPage=page;
+  if(page==="checklist"){checklistActive=true;}
+  applyChecklistDock();
   if(location.hash!=="#"+page){history.replaceState(null,"","#"+page);}
   window.scrollTo(0,0);
 }
@@ -1359,6 +1452,237 @@ $("ctAddRow").addEventListener("click",addCtRow);
 var ctRadios=document.querySelectorAll('input[name="ct_method"]');
 for(var ci2=0;ci2<ctRadios.length;ci2++){ctRadios[ci2].addEventListener("change",calcContainers);}
 
+/* ---------- Tool 05: inbound checklist ---------- */
+var CL_SECTIONS=[
+  {title:"Customer Information", fields:[
+    {key:"name", label:"Name", type:"text"},
+    {key:"company", label:"Company name", type:"text"},
+    {key:"phone", label:"Phone number", type:"text"},
+    {key:"email", label:"Email", type:"text"},
+    {key:"address", label:"Address (samples)", type:"textarea"},
+    {key:"liftgate", label:"Liftgate needed", type:"chips", single:true, hasOther:false, options:["Yes","No"]},
+    {key:"taxcert", label:"Tax exempt / resale cert", type:"chips", single:true, hasOther:false, options:["Yes","No","On file"]}
+  ]},
+  {title:"Order Details", fields:[
+    {key:"projdesc", label:"Project description", type:"chips", options:["Finished good","One off / Tarp","R&D","Distributor"]},
+    {key:"curfabric", label:"Current fabric type", type:"chips", options:["PVC","PE","PU"]},
+    {key:"timeline", label:"Timeline", type:"chips", options:["<1 month","1-3 months","3-6 months"]},
+    {key:"stage", label:"Purchasing stage", type:"chips", options:["Discovery","Comparing options","Ready to buy"]}
+  ]},
+  {title:"Project Details", fields:[
+    {key:"qty", label:"Fabric quantity", type:"chips", options:["0-100 yds","100-1000 yds","1000-10,000 yds","10,000 yds+"]},
+    {key:"qualities", label:"Desired fabric qualities", type:"chips", options:["Embossing","Coating distribution change","FR","UV","Anti-mildew"]},
+    {key:"color", label:"Color", type:"chips", options:["Black","White","Gray"]},
+    {key:"width", label:"Roll width", type:"chips", options:['54"','61"','98"']},
+    {key:"length", label:"Roll length", type:"chips", options:["50 yd","100 yd","200 yd"]}
+  ]},
+  {title:"About the Company", fields:[
+    {key:"details", label:"Details", type:"textarea"},
+    {key:"decision", label:"Decision making process", type:"chips", options:["Decision maker","1-2 others","Many"]},
+    {key:"source", label:"How did you learn about Renegade", type:"chips", options:["Website / Search","Social media","Word of mouth","Tradeshow"]}
+  ]},
+  {title:"Next Steps", fields:[
+    {key:"commpref", label:"Communication preference", type:"chips", options:["Call","Text","Email","Zoom","Visit"]},
+    {key:"followup", label:"Follow up timing", type:"chips", options:["1 day","3 day","1 week","Next quarter"]},
+    {key:"samples", label:"Samples", type:"chips", options:["Swatches","Yardage","Info sheets"]},
+    {key:"quote", label:"Quote needed now", type:"chips", single:true, options:["Yes","No"]}
+  ]},
+  {title:"Notes", fields:[
+    {key:"notes", label:"Notes", type:"textarea"}
+  ]}
+];
+var SCRIPTS={
+  "Standard inbound":
+    '<p>"Thank you for calling Renegade Plastics, this is [your name], how can I help you?"</p>'+
+    '<p>If they have not given a name: "Sorry to interrupt, but who do I have the pleasure of speaking with?"</p>'+
+    '<p>"[Customer name], how are you doing today?"</p>'+
+    '<p>"In case we get disconnected..." If you have their number from caller ID, repeat it back. If not: "What is a good call back number?"</p>'+
+    '<p>To capture the email: "We can send you more information about our materials. What is the best email address to send these to?"</p>'
+};
+var PROMPTS=[
+  "What matters most when choosing a material: cost, performance, sustainability, safety, or something else?",
+  "How important is chemical resistance and recyclability potential in your decision making process?",
+  "If you could improve one feature about your current material or process, what would it be?",
+  "What is driving this project right now (a new product line, a supplier or quality issue, a new spec or regulation)?",
+  "Does the material need to meet any certifications or compliance (FR / NFPA 701, Prop 65, PFAS-free, food contact)?",
+  "How are you fabricating it (hot air, hot wedge, impulse, ultrasonic, sewing)? Good moment to confirm they are not relying on RF welding.",
+  "What is the main failure you see with the current material (UV breakdown, cold cracking, water wicking, abrasion, weight)?",
+  "What annual volume are you running, and is it steady or seasonal?",
+  "Besides yourself, who else weighs in on the final decision, and what matters most to them?"
+];
+
+function clChip(v){var e=v.replace(/"/g,"&quot;");return '<button type="button" class="chip" data-val="'+e+'">'+v+'</button>';}
+function renderChecklist(){
+  $("clScriptText").innerHTML=SCRIPTS["Standard inbound"];
+  $("clScriptType").addEventListener("change",function(){$("clScriptText").innerHTML=SCRIPTS[this.value]||"";});
+  $("clPromptsText").innerHTML="<ul style='margin:6px 0;padding-left:18px;'>"+PROMPTS.map(function(p){return "<li style='margin:5px 0;'>"+p+"</li>";}).join("")+"</ul>";
+  var html="";
+  CL_SECTIONS.forEach(function(sec){
+    html+='<div class="panel"><h2 class="panel-title">'+sec.title+'</h2>';
+    sec.fields.forEach(function(f){
+      html+='<div class="cl-field"><div class="cl-flabel">'+f.label+'</div>';
+      if(f.type==="text"){html+='<input class="cl-text" type="text" data-clkey="'+f.key+'" />';}
+      else if(f.type==="textarea"){html+='<textarea class="cl-text" rows="3" data-clkey="'+f.key+'"></textarea>';}
+      else{
+        html+='<div class="chip-group" data-clkey="'+f.key+'" data-single="'+(f.single?"1":"0")+'">';
+        f.options.forEach(function(o){html+=clChip(o);});
+        if(f.hasOther!==false)html+='<input type="text" class="chip-other" placeholder="Other" />';
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  $("clForm").innerHTML=html;
+}
+
+/* chip toggle (delegated, scoped to the movable body) */
+document.addEventListener("click",function(e){
+  var chip=e.target.closest(".chip");
+  if(chip && chip.closest("#checklistBody")){
+    var g=chip.closest(".chip-group");
+    if(g.getAttribute("data-single")==="1"){
+      var cs=g.querySelectorAll(".chip"); for(var i=0;i<cs.length;i++)cs[i].classList.remove("sel");
+      chip.classList.add("sel");
+    }else{chip.classList.toggle("sel");}
+  }
+});
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function collectChecklist(){
+  var out=[], body=$("checklistBody");
+  CL_SECTIONS.forEach(function(sec){
+    var fields=[];
+    sec.fields.forEach(function(f){
+      var node=body.querySelector('[data-clkey="'+f.key+'"]'); if(!node)return;
+      if(f.type==="text"||f.type==="textarea"){
+        var v=(node.value||"").trim(); if(v)fields.push({label:f.label,text:v,values:[]});
+      }else{
+        var sels=[], cs=node.querySelectorAll(".chip.sel");
+        for(var i=0;i<cs.length;i++)sels.push(cs[i].getAttribute("data-val"));
+        var ot=node.querySelector(".chip-other"), otv=ot?(ot.value||"").trim():"";
+        if(otv)sels.push("Other: "+otv);
+        if(sels.length)fields.push({label:f.label,values:sels,text:""});
+      }
+    });
+    if(fields.length)out.push({title:sec.title,fields:fields});
+  });
+  return out;
+}
+function clCustomer(){
+  function val(k){var n=$("checklistBody").querySelector('[data-clkey="'+k+'"]');return n?(n.value||"").trim():"";}
+  return {name:val("name"), company:val("company")};
+}
+function clFilename(ext){var c=clCustomer();var b=(c.company||c.name||"call").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"");return "Inbound_"+(b||"call")+"."+ext;}
+
+function exportPDF(){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){alert("PDF library did not load (check your connection). You can use Export Word instead.");return;}
+  var doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"});
+  var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=48, y;
+  doc.setFillColor(74,124,89); doc.rect(0,0,pw,64,"F");
+  doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.text("Renegade Plastics",m,30);
+  doc.setFont("helvetica","normal"); doc.setFontSize(11); doc.text("Inbound Call Summary",m,48);
+  y=86; doc.setTextColor(40,40,40); doc.setFontSize(10);
+  doc.text("Date: "+new Date().toLocaleString(),m,y); y+=16;
+  collectChecklist().forEach(function(sec){
+    if(y>ph-70){doc.addPage();y=m;}
+    doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.setTextColor(52,90,65);
+    doc.text(sec.title,m,y); y+=5;
+    doc.setDrawColor(207,224,212); doc.line(m,y,pw-m,y); y+=15;
+    doc.setTextColor(30,30,30);
+    sec.fields.forEach(function(f){
+      var label=f.label+": ", v=f.text?f.text:f.values.join(", ");
+      doc.setFont("helvetica","bold"); doc.setFontSize(10);
+      var lw=doc.getTextWidth(label); doc.text(label,m,y);
+      doc.setFont("helvetica","normal");
+      var lines=doc.splitTextToSize(v,pw-m*2-lw);
+      doc.text(lines,m+lw,y);
+      y+=14*lines.length+3;
+      if(y>ph-50){doc.addPage();y=m;}
+    });
+    y+=8;
+  });
+  doc.save(clFilename("pdf"));
+}
+function exportWord(){
+  var h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Inbound Call Summary</title>'+
+    '<style>body{font-family:Arial,sans-serif;color:#1C2620;font-size:11pt;} h1{color:#21382A;font-size:16pt;margin:0 0 2pt;} .d{color:#5E6B62;font-size:9pt;margin:0 0 12pt;} h2{color:#345A41;font-size:12pt;border-bottom:1.5pt solid #4A7C59;padding-bottom:2pt;margin:14pt 0 6pt;} p.f{margin:3pt 0;} .lbl{font-weight:bold;}</style></head><body>';
+  h+='<h1>Renegade Plastics Inbound Call Summary</h1><p class="d">'+esc(new Date().toLocaleString())+'</p>';
+  collectChecklist().forEach(function(sec){
+    h+='<h2>'+esc(sec.title)+'</h2>';
+    sec.fields.forEach(function(f){h+='<p class="f"><span class="lbl">'+esc(f.label)+':</span> '+(f.text?esc(f.text):esc(f.values.join(", ")))+'</p>';});
+  });
+  h+='</body></html>';
+  var blob=new Blob(["\ufeff"+h],{type:"application/msword"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=clFilename("doc"); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1500);
+}
+function clCopyText(btn){
+  var lines=["Renegade Plastics Inbound Call Summary",new Date().toLocaleString(),""];
+  collectChecklist().forEach(function(sec){
+    lines.push(sec.title.toUpperCase());
+    sec.fields.forEach(function(f){lines.push("  "+f.label+": "+(f.text?f.text:f.values.join(", ")));});
+    lines.push("");
+  });
+  copyText(lines.join("\n"),btn);
+}
+function clReset(){
+  var b=$("checklistBody");
+  var t=b.querySelectorAll(".cl-text, .chip-other"); for(var i=0;i<t.length;i++)t[i].value="";
+  var c=b.querySelectorAll(".chip.sel"); for(var j=0;j<c.length;j++)c[j].classList.remove("sel");
+}
+document.addEventListener("click",function(e){
+  var x=e.target.closest("[data-clx]"); if(!x)return;
+  var k=x.getAttribute("data-clx");
+  if(k==="pdf")exportPDF();
+  else if(k==="word")exportWord();
+  else if(k==="copy")clCopyText(x);
+  else if(k==="reset"){if(confirm("Clear all entries on this checklist?"))clReset();}
+});
+
+/* ---- dock / persistence ---- */
+function dockPxWidth(){
+  var vw=window.innerWidth;
+  return dockWidth==="half"?Math.min(520,Math.round(vw*0.48)):Math.min(340,Math.round(vw*0.30));
+}
+function moveChecklist(toDock){
+  var body=$("checklistBody"), host=toDock?$("clDockHost"):$("clPageHost");
+  if(body && body.parentNode!==host)host.appendChild(body);
+}
+function applyChecklistDock(){
+  var dock=$("checklistDock"), edge=$("clEdgeTab");
+  if(!checklistActive || currentPage==="checklist"){
+    dock.style.display="none"; edge.style.display="none";
+    document.body.classList.remove("cl-pushed");
+    moveChecklist(false);
+    return;
+  }
+  moveChecklist(true);
+  if(dockCollapsed){
+    dock.style.display="none"; edge.style.display="block";
+    document.body.classList.remove("cl-pushed");
+  }else{
+    document.documentElement.style.setProperty("--dockw",dockPxWidth()+"px");
+    dock.style.display="flex"; edge.style.display="none";
+    if(window.innerWidth>900)document.body.classList.add("cl-pushed");
+    else document.body.classList.remove("cl-pushed");
+  }
+}
+$("clPinBtn").addEventListener("click",function(){checklistActive=true;dockCollapsed=false;go("home");});
+document.addEventListener("click",function(e){
+  var d=e.target.closest("#checklistDock [data-cl]");
+  if(d){
+    var a=d.getAttribute("data-cl");
+    if(a==="width"){dockWidth=(dockWidth==="half")?"quarter":"half";applyChecklistDock();}
+    else if(a==="full"){go("checklist");}
+    else if(a==="collapse"){dockCollapsed=true;applyChecklistDock();}
+    else if(a==="close"){checklistActive=false;dockCollapsed=false;applyChecklistDock();}
+    return;
+  }
+  if(e.target.closest("#clEdgeTab")){dockCollapsed=false;applyChecklistDock();}
+});
+window.addEventListener("resize",function(){applyChecklistDock();});
+
 /* ---------- Jasper Tool password gate ---------- */
 function openPw(){
   var m=$("pwModal"); m.classList.add("show");
@@ -1382,6 +1706,7 @@ addRollRow();
 calcSingle();
 addCtRow();
 calcContainers();
+renderChecklist();
 go((location.hash||"#home").slice(1));
 </script>
 </body>
