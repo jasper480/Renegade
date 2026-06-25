@@ -275,7 +275,7 @@
   .chip{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green-dark);background:#fff;border:1px solid var(--green-line);border-radius:20px;padding:7px 13px;cursor:pointer;}
   .chip:hover{border-color:var(--green);}
   .chip.sel{background:var(--green);color:#fff;border-color:var(--green);}
-  .chip-other{flex:0 0 auto;width:140px;font-family:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--green-line);border-radius:8px;}
+  .chip-other{flex:1 0 100%;width:100%;max-width:480px;margin-top:5px;font-family:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--green-line);border-radius:8px;}
   .chip-other:focus{outline:none;border-color:var(--green);}
   .cl-export{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
 
@@ -656,6 +656,12 @@
         </div>
       </div>
 
+      <div style="margin-top:20px;">
+        <div class="panel-title" style="font-size:15px;margin-bottom:12px;">Pallet diagram</div>
+        <div class="schematic-wrap" id="palletSchematic"></div>
+        <p class="hintline" id="palletSchHint"></p>
+      </div>
+
       <button class="print-action" id="printBtn">Print shipping summary</button>
 
       <div class="flag" id="pyramidNote">Heads up: this estimate assumes rolls laid flat in even layers. If the load is pyramid stacked or nested, tick the pyramid box above and enter the real height.</div>
@@ -775,14 +781,24 @@
         </details>
         <div id="clForm"></div>
         <div class="panel" style="margin-top:0;">
-          <h2 class="panel-title">Export</h2>
-          <p class="panel-desc">Script and prompts are left out of the export. Attach the file to the HubSpot record after the call.</p>
+          <h2 class="panel-title">Save the call</h2>
+          <p class="panel-desc">Send straight to HubSpot, or export a file to attach yourself. The script and prompts are never included.</p>
           <div class="cl-export">
-            <button class="print-action" data-clx="pdf" style="margin-top:0;">Export PDF</button>
+            <button class="print-action" data-clx="hubspot" style="margin-top:0;">Send to HubSpot</button>
+            <button class="print-action" data-clx="pdf" style="margin-top:0;background:var(--green-dark);">Export PDF</button>
             <button class="print-action" data-clx="word" style="margin-top:0;background:var(--green-dark);">Export Word</button>
             <button class="copy-btn" data-clx="copy" style="padding:11px 15px;">Copy text</button>
             <button class="remove-btn" data-clx="reset" style="padding:11px 15px;">Reset</button>
           </div>
+          <p id="hsStatus" style="margin-top:12px;min-height:18px;font-size:13px;font-weight:700;"></p>
+          <details class="method" id="hsSetup">
+            <summary>HubSpot connection (admin)</summary>
+            <div class="method-body">
+              <p>To switch on the Send to HubSpot button, set <code>HS_PORTAL_ID</code> and <code>HS_FORM_GUID</code> near the top of the page script, and set <code>HS_REGION</code> to <code>us</code> or <code>eu</code>. Both IDs are safe to keep in the page. Never put a private app token here.</p>
+              <p>In HubSpot, create a form that contains these field internal names: <code>email</code>, <code>firstname</code>, <code>company</code>, <code>phone</code>, and a multi-line text property named <code>inbound_call_summary</code>. Contact details map to the standard fields; all the call answers are written into <code>inbound_call_summary</code>.</p>
+              <p>Optional: a HubSpot workflow that creates a Note from <code>inbound_call_summary</code> gives a true note on the timeline. Without it, the full submission still appears on the contact timeline as a form submission.</p>
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -1111,7 +1127,7 @@ function syncManualPallet(){
 function calcPallet(){
   var dens=getDensity();
   var rows=readRows();
-  var totalRollWt=0, count=0, maxD=0, maxLen=0, valid=false;
+  var totalRollWt=0, count=0, maxD=0, maxLen=0, valid=false, instances=[];
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
     if(!isFinite(r.gsm)||!isFinite(r.width)||!isFinite(r.length)||r.width<=0||r.length<=0||r.qty<=0){
@@ -1125,6 +1141,9 @@ function calcPallet(){
     totalRollWt+=line; count+=r.qty;
     if(dia>maxD)maxD=dia;
     if(r.width>maxLen)maxLen=r.width;
+    var pselEl=r.el.querySelector('[data-f="product"]');
+    var pname=pselEl?(pselEl.value==="MANUAL"?"Manual":pselEl.value):"Roll";
+    for(var q=0;q<r.qty;q++)instances.push({D:dia,Lr:r.width,product:pname});
     setRowOut(r.el,{per:per,line:line,dia:dia});
   }
   // pallet
@@ -1156,11 +1175,68 @@ function calcPallet(){
   }else{
     $("t_dims").innerHTML="&mdash;";
   }
+  renderPalletSchematic(instances, {across:across, layers:layers, L:L, W:W, H:H, deck:deck, palL:pal.len, palW:pal.wid, maxD:maxD, maxLen:maxLen, pyramid:$("pyramidOn").checked, valid:valid});
 }
 function setRowOut(el,o){
   var p=el.querySelector('[data-o="perroll"]'),l=el.querySelector('[data-o="line"]'),d=el.querySelector('[data-o="dia"]');
   if(!o){p.innerHTML="&mdash;";l.innerHTML="&mdash;";d.innerHTML="&mdash;";return;}
   p.textContent=fmt(o.per,1)+" lb";l.textContent=fmt(o.line,1)+" lb";d.textContent=fmt(o.dia,1)+" in";
+}
+var PAL_COLORS=["#4A7C59","#7AAE8A","#345A41","#A7C9B1","#5E8C6C","#8FBC9C","#2F5139","#C7DECE"];
+function renderPalletSchematic(instances, lay){
+  var wrap=$("palletSchematic"), hint=$("palletSchHint");
+  if(!lay.valid || !instances.length || !(lay.maxD>0) || !(lay.W>0)){
+    wrap.innerHTML=""; hint.textContent="Add at least one roll row above to see the pallet diagram."; return;
+  }
+  var across=lay.across, layers=lay.layers, W=lay.W, maxD=lay.maxD, deck=lay.deck>0?lay.deck:0;
+  var prodColors={}, ci=0, legend=[];
+  instances.forEach(function(it){ if(!(it.product in prodColors)){ prodColors[it.product]=PAL_COLORS[ci%PAL_COLORS.length]; ci++; legend.push(it.product); } });
+
+  /* END VIEW: W x H cross-section, rolls as circles, across per layer, stacked */
+  var totalH = deck + layers*maxD;
+  var fScale = 300/W; var capPx=360; if(totalH*fScale>capPx) fScale=capPx/totalH;
+  var svgW=W*fScale, svgH=totalH*fScale;
+  var f='<svg viewBox="0 0 '+svgW.toFixed(1)+' '+svgH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg">';
+  if(deck>0){
+    f+='<rect x="0" y="'+((totalH-deck)*fScale).toFixed(1)+'" width="'+svgW.toFixed(1)+'" height="'+(deck*fScale).toFixed(1)+'" fill="#D8C49C" stroke="#9C8455" stroke-width="1.5"/>';
+    var notch=svgW/7;
+    for(var g=1;g<=2;g++){var nx=g*svgW/3-notch/2; f+='<rect x="'+nx.toFixed(1)+'" y="'+(svgH-3).toFixed(1)+'" width="'+notch.toFixed(1)+'" height="3" fill="#9C8455"/>';}
+  }
+  for(var Lr=0;Lr<layers;Lr++){
+    var seg=instances.slice(Lr*across,(Lr+1)*across); if(!seg.length)break;
+    var lw=0; seg.forEach(function(it){lw+=it.D;});
+    var cursor=(W-lw)/2; var bandBottom=deck+Lr*maxD;
+    seg.forEach(function(it){
+      var cx=(cursor+it.D/2)*fScale, cy=(totalH-(bandBottom+it.D/2))*fScale, rr=(it.D/2)*fScale;
+      f+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+rr.toFixed(1)+'" fill="'+prodColors[it.product]+'" fill-opacity="0.85" stroke="#21382A" stroke-width="1"/>';
+      cursor+=it.D;
+    });
+  }
+  f+='</svg>';
+
+  /* TOP VIEW: L x W footprint of the bottom layer, rolls run lengthwise */
+  var Ldim=lay.L>0?lay.L:lay.maxLen, seg0=instances.slice(0,across);
+  var tScale=560/Ldim; var capT=300; if(W*tScale>capT)tScale=capT/W;
+  var tW=Ldim*tScale, tH=W*tScale;
+  var t='<svg viewBox="0 0 '+tW.toFixed(1)+' '+tH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg">';
+  t+='<rect x="0" y="0" width="'+tW.toFixed(1)+'" height="'+tH.toFixed(1)+'" fill="#FAFBFA" stroke="#345A41" stroke-width="1.5"/>';
+  var lwT=0; seg0.forEach(function(it){lwT+=it.D;}); var curY=(W-lwT)/2;
+  seg0.forEach(function(it){
+    var rl=it.Lr*tScale, rw=it.D*tScale, x=((Ldim-it.Lr)/2)*tScale, y=curY*tScale;
+    t+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+rl.toFixed(1)+'" height="'+rw.toFixed(1)+'" rx="4" fill="'+prodColors[it.product]+'" fill-opacity="0.85" stroke="#21382A" stroke-width="1"/>';
+    curY+=it.D;
+  });
+  t+='</svg>';
+
+  var leg='';
+  if(legend.length>1){
+    leg='<div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:14px;margin-top:2px;">';
+    legend.forEach(function(p){ leg+='<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--green-deep);"><span style="width:12px;height:12px;border-radius:3px;background:'+prodColors[p]+';display:inline-block;"></span>'+p+'</span>'; });
+    leg+='</div>';
+  }
+  wrap.innerHTML='<div><div style="width:300px;max-width:100%;">'+f+'</div><p class="sch-cap">End view: '+layers+(layers===1?' layer':' layers')+', up to '+across+' across</p></div>'+
+                 '<div>'+t+'<p class="sch-cap">Top view: bottom layer, rolls run lengthwise</p></div>'+leg;
+  hint.textContent="Showing "+instances.length+(instances.length===1?" roll":" rolls")+": up to "+across+" across per layer, "+layers+(layers===1?" layer":" layers")+" high."+(lay.pyramid?" Pyramid stacking is on, so the height total uses your manual entry.":"");
 }
 $("addRoll").addEventListener("click",addRollRow);
 $("palletType").addEventListener("change",function(){syncManualPallet();calcPallet();});
@@ -1617,14 +1693,49 @@ function exportWord(){
   a.href=url; a.download=clFilename("doc"); document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(url);},1500);
 }
-function clCopyText(btn){
+function clSummaryText(){
   var lines=["Renegade Plastics Inbound Call Summary",new Date().toLocaleString(),""];
   collectChecklist().forEach(function(sec){
     lines.push(sec.title.toUpperCase());
     sec.fields.forEach(function(f){lines.push("  "+f.label+": "+(f.text?f.text:f.values.join(", ")));});
     lines.push("");
   });
-  copyText(lines.join("\n"),btn);
+  return lines.join("\n");
+}
+function clCopyText(btn){ copyText(clSummaryText(),btn); }
+
+/* ---- HubSpot (Forms API, no token, safe for a public page) ---- */
+/* Set these once to turn on the Send to HubSpot button.
+   HS_REGION is "us" for standard portals or "eu" for EU data-center portals. */
+var HS_PORTAL_ID="";   /* e.g. "1234567" */
+var HS_FORM_GUID="";   /* e.g. "d9afc0c5-1111-2222-3333-444455556666" */
+var HS_REGION="us";
+function clVal(k){var n=$("checklistBody").querySelector('[data-clkey="'+k+'"]');return n?(n.value||"").trim():"";}
+function setHsStatus(msg,type){var el=$("hsStatus");if(!el)return;el.textContent=msg;el.style.color=(type==="ok")?"#345A41":(type==="err")?"#C0504E":"#5E6B62";}
+function hsFields(){
+  var f=[];
+  if(clVal("email"))f.push({name:"email",value:clVal("email")});
+  if(clVal("name"))f.push({name:"firstname",value:clVal("name")});
+  if(clVal("company"))f.push({name:"company",value:clVal("company")});
+  if(clVal("phone"))f.push({name:"phone",value:clVal("phone")});
+  f.push({name:"inbound_call_summary",value:clSummaryText()});
+  return f;
+}
+function sendToHubspot(){
+  if(!HS_PORTAL_ID||!HS_FORM_GUID){ setHsStatus("HubSpot is not connected yet. An admin needs to add the portal ID and form GUID (see HubSpot connection notes below).","err"); return; }
+  if(!clVal("email")){ setHsStatus("Add an email first so HubSpot can create the contact.","err"); return; }
+  var host=(HS_REGION==="eu")?"api-eu1.hsforms.com":"api.hsforms.com";
+  var url="https://"+host+"/submissions/v3/integration/submit/"+HS_PORTAL_ID+"/"+HS_FORM_GUID;
+  var body={submittedAt:Date.now(), fields:hsFields(), context:{pageName:"Renegade Tools - Inbound Checklist", pageUri:location.href}};
+  var hutk=(document.cookie.match(/hubspotutk=([^;]+)/)||[])[1]; if(hutk)body.context.hutk=hutk;
+  setHsStatus("Sending to HubSpot...","");
+  fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};}).catch(function(){return {ok:r.ok,j:{}};});})
+    .then(function(res){
+      if(res.ok){ setHsStatus("Sent to HubSpot. Contact created or updated and the call summary saved.","ok"); }
+      else{ var m=res.j&&res.j.message?res.j.message:"submission rejected"; setHsStatus("HubSpot error: "+m,"err"); }
+    })
+    .catch(function(e){ setHsStatus("Could not reach HubSpot: "+e.message,"err"); });
 }
 function clReset(){
   var b=$("checklistBody");
@@ -1637,6 +1748,7 @@ document.addEventListener("click",function(e){
   if(k==="pdf")exportPDF();
   else if(k==="word")exportWord();
   else if(k==="copy")clCopyText(x);
+  else if(k==="hubspot")sendToHubspot();
   else if(k==="reset"){if(confirm("Clear all entries on this checklist?"))clReset();}
 });
 
