@@ -338,6 +338,7 @@
       <div class="nav-tab" data-go="roll">Roll &amp; Pallet Weight</div>
       <div class="nav-tab" data-go="container">Container Loading</div>
       <div class="nav-tab" data-go="checklist">Inbound Checklist</div>
+      <div class="nav-tab" data-go="tarp">Tarp Calculator</div>
     </div>
   </div>
 </nav>
@@ -349,7 +350,7 @@
     <div class="hero">
       <p class="eyebrow">Internal toolkit</p>
       <h1 class="page-title">Quick calculators for the sales &amp; ops team</h1>
-      <p class="page-sub">Tools for the everyday fabric math: converting fabric weight units, turning one price into every price, estimating roll and pallet shipping weights, and planning shipping container loads. Nothing is saved, everything runs in your browser.</p>
+      <p class="page-sub">A set of quick tools for the everyday fabric math and call handling. Nothing is saved, everything runs in your browser.</p>
     </div>
     <div class="tool-cards">
       <div class="tool-card" data-go="convert">
@@ -381,6 +382,12 @@
         <h3>Inbound Checklist</h3>
         <p>The call script and intake form, digital. Click to fill, it follows you to other tools as a side panel, and exports to PDF or Word for the HubSpot record.</p>
         <span class="go">Open checklist &rarr;</span>
+      </div>
+      <div class="tool-card" data-go="tarp">
+        <span class="tc-num">06</span>
+        <h3>Tarp Calculator</h3>
+        <p>Size a custom tarp, pick a fabric, set grommet spacing, and get the finished weight, a folded shipping size, and a layout diagram.</p>
+        <span class="go">Open calculator &rarr;</span>
       </div>
     </div>
   </section>
@@ -801,6 +808,75 @@
           </details>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- TARP CALCULATOR -->
+  <section class="page" id="page-tarp">
+    <p class="eyebrow">Tool 06</p>
+    <h1 class="page-title">Tarp Weight Calculator</h1>
+    <p class="page-sub">Size a custom tarp, pick a fabric, set grommet spacing, and get the finished weight, a folded shipping size, and a layout diagram.</p>
+
+    <div class="panel">
+      <h2 class="panel-title">Tarp</h2>
+      <div class="grid cols-3">
+        <div class="field"><label>Length <span class="hint">(ft)</span></label><input id="tp_length" type="text" inputmode="decimal" placeholder="e.g. 30" /></div>
+        <div class="field"><label>Width <span class="hint">(ft)</span></label><input id="tp_width" type="text" inputmode="decimal" placeholder="e.g. 20" /></div>
+        <div class="field"><label>Fabric</label><select id="tp_product"></select></div>
+      </div>
+      <div class="grid cols-2" id="tp_manual" style="margin-top:16px;display:none;">
+        <div class="field"><label>Manual GSM</label><input id="tp_gsm" type="text" inputmode="decimal" placeholder="e.g. 350" /></div>
+        <div class="field"><label>Thickness <span class="hint">(mil, for fold estimate)</span></label><input id="tp_caliper" type="text" inputmode="decimal" value="22" /></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Construction</h2>
+      <div class="grid cols-3">
+        <div class="field"><label>Hem <span class="hint">(in, per edge)</span></label><input id="tp_hem" type="text" inputmode="decimal" value="2" /></div>
+        <div class="field"><label>Weld seam overlap <span class="hint">(in)</span></label><input id="tp_weld" type="text" inputmode="decimal" value="2" /></div>
+        <div class="field"><label>Fabric roll width <span class="hint">(in)</span></label><input id="tp_rollw" type="text" inputmode="decimal" value="61" /></div>
+        <div class="field"><label>Grommet spacing, length edges <span class="hint">(in)</span></label><input id="tp_spaceL" type="text" inputmode="decimal" value="24" /></div>
+        <div class="field"><label>Grommet spacing, width edges <span class="hint">(in)</span></label><input id="tp_spaceW" type="text" inputmode="decimal" value="24" /></div>
+        <div class="field"><label>Target folded size <span class="hint">(in, max side)</span></label><input id="tp_fold" type="text" inputmode="decimal" value="40" /></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Results</h2>
+      <div class="pallet-totals">
+        <div class="tot-card"><div class="tk">Total weight</div><div class="tv"><span id="tp_total">&mdash;</span> <span class="tu">lb</span></div></div>
+        <div class="tot-card"><div class="tk">Folded size (L x W x thick)</div><div class="tv" style="font-size:18px;" id="tp_folded">&mdash;</div></div>
+      </div>
+      <div class="readout" style="margin-top:16px;">
+        <div class="readout-row"><div class="rk">Fabric weight</div><div class="readout-val"><span class="num" id="tp_fabric">&mdash;</span></div></div>
+        <div class="readout-row"><div class="rk">Grommets <small id="tp_gromcount"></small></div><div class="readout-val"><span class="num" id="tp_grom">&mdash;</span></div></div>
+        <div class="readout-row"><div class="rk">Fabric area <small>includes hem and seams</small></div><div class="readout-val"><span class="num" id="tp_area">&mdash;</span></div></div>
+        <div class="readout-row"><div class="rk">Panels / seams <small>from roll width</small></div><div class="readout-val"><span class="num" id="tp_panels">&mdash;</span></div></div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="panel-title" style="font-size:15px;margin-bottom:12px;">Tarp layout</div>
+        <div id="tp_graphic"></div>
+        <p class="hintline" id="tp_ghint"></p>
+      </div>
+
+      <button class="print-action" id="tpExportBtn" style="margin-top:18px;">Export PDF spec sheet</button>
+
+      <details class="method">
+        <summary>Assumptions &amp; methodology</summary>
+        <div class="method-body">
+          <ul>
+            <li>Cut size = finished size plus the hem on each edge, so flat = (L + 2 hem) x (W + 2 hem). A single-fold hem is assumed and all hem material is retained.</li>
+            <li>Panels run the long way. Panel count = the shorter flat side divided by roll width, rounded up. Each seam adds a weld-width overlap along the full length.</li>
+            <li>Fabric weight = total flat area x GSM, with no waste deduction.</li>
+            <li>Grommets = 2 x (length / length spacing, rounded up) + 2 x (width / width spacing, rounded up), which counts the four corners.</li>
+            <li>Folded size halves each side until it is at or under the target, then estimates thickness as folded layers x fabric caliper. Real folds add bulk, so treat the thickness as a floor.</li>
+          </ul>
+          <div class="dens-field"><label style="margin:0;font-size:12.5px;font-weight:700;color:var(--green-deep);">Grommet weight (lb each)</label><input id="tp_gromwt" type="text" inputmode="decimal" value="0.0125" /></div>
+          <p style="margin-top:8px;">The default reflects a polypropylene grommet, ultrasonic welded, with a 0.75 in inside diameter and 1.75 in outside diameter. Adjust if your grommet differs.</p>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -1546,7 +1622,7 @@ var CL_SECTIONS=[
     {key:"stage", label:"Purchasing stage", type:"chips", options:["Discovery","Comparing options","Ready to buy"]}
   ]},
   {title:"Project Details", fields:[
-    {key:"qty", label:"Fabric quantity", type:"chips", options:["0-100 yds","100-1000 yds","1000-10,000 yds","10,000 yds+"]},
+    {key:"qty", label:"Fabric quantity", type:"chips", options:["Tier 1: 0-100 yds","Tier 2: 100-3,000 yds","Tier 3: 3,000-10,000 yds","Tier 4: 10,000 yds+"]},
     {key:"qualities", label:"Desired fabric qualities", type:"chips", options:["Embossing","Coating distribution change","FR","UV","Anti-mildew"]},
     {key:"color", label:"Color", type:"chips", options:["Black","White","Gray"]},
     {key:"width", label:"Roll width", type:"chips", options:['54"','61"','98"']},
@@ -1593,8 +1669,8 @@ function renderChecklist(){
   $("clScriptType").addEventListener("change",function(){$("clScriptText").innerHTML=SCRIPTS[this.value]||"";});
   $("clPromptsText").innerHTML="<ul style='margin:6px 0;padding-left:18px;'>"+PROMPTS.map(function(p){return "<li style='margin:5px 0;'>"+p+"</li>";}).join("")+"</ul>";
   var html="";
-  CL_SECTIONS.forEach(function(sec){
-    html+='<div class="panel"><h2 class="panel-title">'+sec.title+'</h2>';
+  CL_SECTIONS.forEach(function(sec,idx){
+    html+='<div class="panel"><h2 class="panel-title">Section '+(idx+1)+' / '+sec.title+'</h2>';
     sec.fields.forEach(function(f){
       html+='<div class="cl-field"><div class="cl-flabel">'+f.label+'</div>';
       if(f.type==="text"){html+='<input class="cl-text" type="text" data-clkey="'+f.key+'" />';}
@@ -1795,6 +1871,171 @@ document.addEventListener("click",function(e){
 });
 window.addEventListener("resize",function(){applyChecklistDock();});
 
+/* ---------- Tool 06: tarp weight ---------- */
+var TARP_PRODUCTS=["PPI-200","PPI-270","PPI-370","PPI-420","PPI-550","PPC-210","PPC-230","Flex-270","Flex-320","Flex-370"];
+function tarpProductOptions(){var s="";TARP_PRODUCTS.forEach(function(k){s+='<option value="'+k+'">'+k+' ('+PRODUCTS[k].gsm+' gsm)</option>';});return s+'<option value="MANUAL">Manual GSM</option>';}
+function computeTarp(){
+  var prod=$("tp_product").value;
+  var Lft=num($("tp_length").value), Wft=num($("tp_width").value);
+  var gsm=(prod==="MANUAL")?num($("tp_gsm").value):PRODUCTS[prod].gsm;
+  var caliper=(prod==="MANUAL")?(num($("tp_caliper").value)||22):PRODUCTS[prod].mil;
+  if(!(Lft>0)||!(Wft>0)||!(gsm>0))return null;
+  var hem=num($("tp_hem").value); if(!isFinite(hem)||hem<0)hem=2;
+  var weld=num($("tp_weld").value); if(!isFinite(weld)||weld<0)weld=2;
+  var rollW=num($("tp_rollw").value); if(!isFinite(rollW)||rollW<=0)rollW=61;
+  var sL=num($("tp_spaceL").value); if(!isFinite(sL)||sL<=0)sL=24;
+  var sW=num($("tp_spaceW").value); if(!isFinite(sW)||sW<=0)sW=24;
+  var gwt=num($("tp_gromwt").value); if(!isFinite(gwt)||gwt<0)gwt=0.0125;
+  var target=num($("tp_fold").value); if(!isFinite(target)||target<=0)target=40;
+  var L=Lft*12, W=Wft*12, flatL=L+2*hem, flatW=W+2*hem;
+  var longS=Math.max(flatL,flatW), shortS=Math.min(flatL,flatW);
+  var panels=Math.ceil(shortS/rollW), seams=Math.max(0,panels-1);
+  var totalArea=flatL*flatW + seams*weld*longS;
+  var fabricLb=gsm*(totalArea*0.00064516)/1000*2.20462262;
+  var gromCount=2*Math.ceil(L/sL)+2*Math.ceil(W/sW), gromLb=gromCount*gwt, totalLb=fabricLb+gromLb;
+  var fL=0,a=L; while(a>target){a/=2;fL++;} var fW=0,b=W; while(b>target){b/=2;fW++;}
+  var foldedL=L/Math.pow(2,fL), foldedW=W/Math.pow(2,fW), layers=Math.pow(2,fL+fW), thick=layers*(caliper/1000);
+  var prodLabel=(prod==="MANUAL")?("Manual ("+gsm+" gsm)"):prod;
+  return {prod:prod,prodLabel:prodLabel,Lft:Lft,Wft:Wft,L:L,W:W,gsm:gsm,caliper:caliper,hem:hem,weld:weld,rollW:rollW,sL:sL,sW:sW,gwt:gwt,
+    panels:panels,seams:seams,totalArea:totalArea,fabricLb:fabricLb,gromCount:gromCount,gromLb:gromLb,totalLb:totalLb,foldedL:foldedL,foldedW:foldedW,thick:thick};
+}
+function calcTarp(){
+  $("tp_manual").style.display=($("tp_product").value==="MANUAL")?"grid":"none";
+  var d=computeTarp();
+  var ids=["tp_total","tp_folded","tp_fabric","tp_grom","tp_area","tp_panels"];
+  if(!d){ ids.forEach(function(i){$(i).innerHTML="&mdash;";}); $("tp_gromcount").textContent=""; renderTarpGraphic(null); return; }
+  $("tp_total").textContent=fmt(d.totalLb,1);
+  $("tp_folded").textContent=fmt(d.foldedL,1)+" x "+fmt(d.foldedW,1)+" x "+fmt(d.thick,1)+" in";
+  $("tp_fabric").textContent=fmt(d.fabricLb,1)+" lb";
+  $("tp_grom").textContent=fmt(d.gromLb,2)+" lb";
+  $("tp_gromcount").textContent="("+d.gromCount+" total)";
+  $("tp_area").textContent=fmt(d.totalArea/144,1)+" sq ft";
+  $("tp_panels").textContent=d.panels+" / "+d.seams;
+  renderTarpGraphic({L:d.L,W:d.W,Lft:d.Lft,Wft:d.Wft,hem:d.hem,rollW:d.rollW,sL:d.sL,sW:d.sW,seams:d.seams,gromCount:d.gromCount});
+}
+function renderTarpGraphic(p){
+  var wrap=$("tp_graphic"), hint=$("tp_ghint");
+  if(!p){wrap.innerHTML="";hint.textContent="";return;}
+  var L=p.L, W=p.W, maxW=520, maxH=360, pad=26;
+  var scale=Math.min(maxW/W, maxH/L);
+  var gw=W*scale, gh=L*scale, ox=pad, oy=pad, tW=gw+pad*2, tH=gh+pad*2;
+  var hp=p.hem*scale, inset=Math.max(hp/2,4);
+  var s='<svg viewBox="0 0 '+tW.toFixed(1)+' '+tH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">';
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+gw.toFixed(1)+'" height="'+gh.toFixed(1)+'" fill="#EDF3EE" stroke="#345A41" stroke-width="2"/>';
+  s+='<rect x="'+(ox+hp).toFixed(1)+'" y="'+(oy+hp).toFixed(1)+'" width="'+(gw-2*hp).toFixed(1)+'" height="'+(gh-2*hp).toFixed(1)+'" fill="none" stroke="#4A7C59" stroke-width="1" stroke-dasharray="5 4"/>';
+  if(p.seams>0){
+    if(L>=W){ for(var k=1;k<=p.seams;k++){var x=ox+(k*p.rollW)*scale; if(x<ox+gw-0.5) s+='<line x1="'+x.toFixed(1)+'" y1="'+oy+'" x2="'+x.toFixed(1)+'" y2="'+(oy+gh).toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
+    else{ for(var k2=1;k2<=p.seams;k2++){var y=oy+(k2*p.rollW)*scale; if(y<oy+gh-0.5) s+='<line x1="'+ox+'" y1="'+y.toFixed(1)+'" x2="'+(ox+gw).toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
+  }
+  var nL=Math.max(1,Math.ceil(L/p.sL)), nW=Math.max(1,Math.ceil(W/p.sW)), gr=3.2;
+  function gm(cx,cy){return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+gr+'" fill="#fff" stroke="#21382A" stroke-width="1.4"/>';}
+  for(var i=0;i<=nL;i++){var y=oy+inset+(gh-2*inset)*(i/nL); s+=gm(ox+inset,y)+gm(ox+gw-inset,y);}
+  for(var j=0;j<=nW;j++){var x2=ox+inset+(gw-2*inset)*(j/nW); s+=gm(x2,oy+inset)+gm(x2,oy+gh-inset);}
+  s+='<text x="'+(ox+gw/2).toFixed(1)+'" y="'+(oy-9).toFixed(1)+'" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="#345A41">'+p.Wft+' ft</text>';
+  var ly=(oy+gh/2).toFixed(1), lx=(ox-9).toFixed(1);
+  s+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="#345A41" transform="rotate(-90 '+lx+' '+ly+')">'+p.Lft+' ft</text>';
+  s+='</svg>';
+  wrap.innerHTML=s;
+  hint.textContent="Dashed line is the hem. Light lines are weld seams between panels. Circles are grommets ("+p.gromCount+" total).";
+}
+function exportTarpPDF(){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){alert("PDF library did not load. Check your connection and try again.");return;}
+  var d=computeTarp();
+  if(!d){alert("Enter the tarp length, width, and fabric first.");return;}
+  var doc=new window.jspdf.jsPDF({unit:"pt",format:"letter",orientation:"landscape"});
+  var PW=792,PH=612;
+  function dash(on){doc.setLineDashPattern(on?[3,3]:[],0);}
+
+  doc.setDrawColor(52,90,65);doc.setLineWidth(1.5);doc.rect(18,18,PW-36,PH-36);
+  doc.setFillColor(74,124,89);doc.rect(18,18,PW-36,40,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("RENEGADE PLASTICS",30,45);
+  doc.setFont("helvetica","normal");doc.setFontSize(12);doc.text("Custom Tarp Specification",PW-30,45,{align:"right"});
+
+  /* specifications table (right column) */
+  var rx=556, rw=(PW-18)-rx, ry=70;
+  doc.setFillColor(237,243,238);doc.rect(rx,ry,rw,18,"F");
+  doc.setTextColor(33,56,42);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("SPECIFICATIONS",rx+6,ry+13);
+  var rows=[
+    ["Fabric",d.prodLabel],["Weight",d.gsm+" g/m2"],
+    ["Finished size",d.Lft+" x "+d.Wft+" ft"],["  in inches",d.L+" x "+d.W+" in"],
+    ["Hem",d.hem+" in / edge"],["Weld overlap",d.weld+" in"],["Roll width",d.rollW+" in"],
+    ["Panels / seams",d.panels+" / "+d.seams],
+    ["Grommet spacing L",d.sL+" in"],["Grommet spacing W",d.sW+" in"],["Grommet count",String(d.gromCount)],
+    ["Fabric area",fmt(d.totalArea/144,1)+" sq ft"],["Fabric weight",fmt(d.fabricLb,1)+" lb"],["Grommet weight",fmt(d.gromLb,2)+" lb"]
+  ];
+  var y=ry+18,rh=15.5;doc.setFontSize(8.5);
+  rows.forEach(function(r,i){
+    if(i%2){doc.setFillColor(248,250,248);doc.rect(rx,y,rw,rh,"F");}
+    doc.setFont("helvetica","bold");doc.setTextColor(52,90,65);doc.text(r[0],rx+6,y+10.5);
+    doc.setFont("helvetica","normal");doc.setTextColor(30,30,30);doc.text(r[1],rx+rw-6,y+10.5,{align:"right"});
+    y+=rh;
+  });
+  doc.setDrawColor(207,224,212);doc.setLineWidth(0.8);doc.rect(rx,ry,rw,y-ry);
+  doc.setFillColor(74,124,89);doc.rect(rx,y+6,rw,28,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("TOTAL WEIGHT",rx+6,y+18);
+  doc.setFontSize(15);doc.text(fmt(d.totalLb,1)+" lb",rx+rw-6,y+25,{align:"right"});
+  y+=6+28+16;
+  doc.setTextColor(33,56,42);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("Folded size (est.)",rx+6,y);
+  doc.setFont("helvetica","normal");doc.setTextColor(30,30,30);doc.text(fmt(d.foldedL,1)+" x "+fmt(d.foldedW,1)+" x "+fmt(d.thick,1)+" in",rx+rw-6,y,{align:"right"});
+
+  /* title block (bottom-right) */
+  var tbh=70, tbx=rx, tbw=rw, tby=PH-18-tbh;
+  doc.setDrawColor(52,90,65);doc.setLineWidth(1);doc.rect(tbx,tby,tbw,tbh);doc.line(tbx,tby+24,tbx+tbw,tby+24);
+  doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(33,56,42);doc.text("RENEGADE PLASTICS CORPORATION",tbx+6,tby+11);
+  doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(80,90,82);doc.text("Green Bay, WI  /  Golden, CO",tbx+6,tby+20);
+  var c2=tbx+tbw*0.54;doc.setTextColor(33,56,42);doc.setFontSize(7.5);
+  doc.text("DATE: "+new Date().toLocaleDateString(),tbx+6,tby+38);
+  doc.text("UNITS: in / ft / lb",tbx+6,tby+50);
+  doc.text("SCALE: NTS",tbx+6,tby+62);
+  doc.text("DRAWN: Renegade Tools",c2,tby+38);
+  doc.text("TITLE: Custom Tarp Spec",c2,tby+50);
+  doc.text("SHEET: 1 of 1",c2,tby+62);
+
+  /* drawing area (left) */
+  var dax=34, daTop=70, daw=rx-34-16, dah=(PH-18)-daTop, padd=56;
+  var scale=Math.min((daw-padd*2)/d.W, (dah-padd*2)/d.L);
+  var gw=d.W*scale, gh=d.L*scale, tx=dax+(daw-gw)/2, ty=daTop+(dah-gh)/2;
+  doc.setFillColor(237,243,238);doc.setDrawColor(52,90,65);doc.setLineWidth(1.2);doc.rect(tx,ty,gw,gh,"FD");
+  var hp=d.hem*scale;
+  dash(true);doc.setDrawColor(74,124,89);doc.setLineWidth(0.8);doc.rect(tx+hp,ty+hp,gw-2*hp,gh-2*hp);dash(false);
+  if(d.seams>0){
+    dash(true);doc.setDrawColor(122,174,138);doc.setLineWidth(0.7);
+    if(d.L>=d.W){for(var k=1;k<=d.seams;k++){var sx=tx+k*d.rollW*scale;if(sx<tx+gw-0.5)doc.line(sx,ty,sx,ty+gh);}}
+    else{for(var k2=1;k2<=d.seams;k2++){var sy=ty+k2*d.rollW*scale;if(sy<ty+gh-0.5)doc.line(tx,sy,tx+gw,sy);}}
+    dash(false);
+  }
+  var nL=Math.max(1,Math.ceil(d.L/d.sL)), nW=Math.max(1,Math.ceil(d.W/d.sW));
+  var inset=Math.max(hp/2,5), gr=2.6, i;
+  doc.setDrawColor(33,56,42);doc.setLineWidth(0.8);doc.setFillColor(255,255,255);
+  for(i=0;i<=nL;i++){var gy=ty+inset+(gh-2*inset)*(i/nL);doc.circle(tx+inset,gy,gr,"FD");doc.circle(tx+gw-inset,gy,gr,"FD");}
+  for(i=0;i<=nW;i++){var gx=tx+inset+(gw-2*inset)*(i/nW);doc.circle(gx,ty+inset,gr,"FD");doc.circle(gx,ty+gh-inset,gr,"FD");}
+
+  function arrowH(x,yy,dir){var a=5;doc.setFillColor(70,70,70);if(dir<0)doc.triangle(x,yy,x+a,yy-2.6,x+a,yy+2.6,"F");else doc.triangle(x,yy,x-a,yy-2.6,x-a,yy+2.6,"F");}
+  function arrowV(x,yy,dir){var a=5;doc.setFillColor(70,70,70);if(dir<0)doc.triangle(x,yy,x-2.6,yy+a,x+2.6,yy+a,"F");else doc.triangle(x,yy,x-2.6,yy-a,x+2.6,yy-a,"F");}
+  doc.setDrawColor(70,70,70);doc.setLineWidth(0.6);
+  var wy=ty-26;
+  doc.line(tx,ty-4,tx,wy-4);doc.line(tx+gw,ty-4,tx+gw,wy-4);
+  doc.line(tx,wy,tx+gw,wy);arrowH(tx,wy,-1);arrowH(tx+gw,wy,1);
+  doc.setTextColor(33,56,42);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(d.Wft+" ft  ("+d.W+" in)",tx+gw/2,wy-4,{align:"center"});
+  var lx=tx-26;
+  doc.line(tx-4,ty,lx-4,ty);doc.line(tx-4,ty+gh,lx-4,ty+gh);
+  doc.line(lx,ty,lx,ty+gh);arrowV(lx,ty,-1);arrowV(lx,ty+gh,1);
+  doc.text(d.Lft+" ft  ("+d.L+" in)",lx-4,ty+gh/2,{align:"center",angle:90});
+  if(nW>=1){
+    var gx0=tx+inset, gx1=tx+inset+(gw-2*inset)*(1/nW), sy2=ty+inset+13;
+    doc.setDrawColor(120,120,120);doc.setLineWidth(0.4);doc.line(gx0,sy2,gx1,sy2);arrowH(gx0,sy2,-1);arrowH(gx1,sy2,1);
+    doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(80,80,80);doc.text(d.sW+" in typ",(gx0+gx1)/2,sy2-2,{align:"center"});
+  }
+  doc.setTextColor(74,124,89);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(d.hem+" in hem (typ)",tx+gw/2,ty+gh-hp-4,{align:"center"});
+
+  doc.save("Tarp_"+d.Lft+"x"+d.Wft+"_"+d.prod+".pdf");
+}
+$("tp_product").innerHTML=tarpProductOptions();
+$("tp_product").value="PPI-370";
+$("tp_product").addEventListener("change",calcTarp);
+["tp_length","tp_width","tp_gsm","tp_caliper","tp_hem","tp_weld","tp_rollw","tp_spaceL","tp_spaceW","tp_fold","tp_gromwt"].forEach(function(id){$(id).addEventListener("input",calcTarp);});
+$("tpExportBtn").addEventListener("click",exportTarpPDF);
+
 /* ---------- Jasper Tool password gate ---------- */
 function openPw(){
   var m=$("pwModal"); m.classList.add("show");
@@ -1819,6 +2060,7 @@ calcSingle();
 addCtRow();
 calcContainers();
 renderChecklist();
+calcTarp();
 go((location.hash||"#home").slice(1));
 </script>
 </body>
