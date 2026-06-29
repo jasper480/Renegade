@@ -861,7 +861,10 @@
         <p class="hintline" id="tp_ghint"></p>
       </div>
 
-      <button class="print-action" id="tpExportBtn" style="margin-top:18px;">Export PDF spec sheet</button>
+      <div class="cl-export" style="margin-top:18px;">
+        <button class="print-action" id="tpExportBtn" style="margin-top:0;">Export PDF spec sheet</button>
+        <button class="print-action" id="tpCutBtn" style="margin-top:0;background:var(--green-dark);">Export Cut List</button>
+      </div>
 
       <details class="method">
         <summary>Assumptions &amp; methodology</summary>
@@ -1889,7 +1892,7 @@ function computeTarp(){
   var target=num($("tp_fold").value); if(!isFinite(target)||target<=0)target=40;
   var L=Lft*12, W=Wft*12, flatL=L+2*hem, flatW=W+2*hem;
   var longS=Math.max(flatL,flatW), shortS=Math.min(flatL,flatW);
-  var panels=Math.ceil(shortS/rollW), seams=Math.max(0,panels-1);
+  var panels=(rollW>weld)?Math.max(1,Math.ceil((shortS-weld)/(rollW-weld))):1, seams=Math.max(0,panels-1);
   var totalArea=flatL*flatW + seams*weld*longS;
   var fabricLb=gsm*(totalArea*0.00064516)/1000*2.20462262;
   var gromCount=2*Math.ceil(L/sL)+2*Math.ceil(W/sW), gromLb=gromCount*gwt, totalLb=fabricLb+gromLb;
@@ -1911,7 +1914,7 @@ function calcTarp(){
   $("tp_gromcount").textContent="("+d.gromCount+" total)";
   $("tp_area").textContent=fmt(d.totalArea/144,1)+" sq ft";
   $("tp_panels").textContent=d.panels+" / "+d.seams;
-  renderTarpGraphic({L:d.L,W:d.W,Lft:d.Lft,Wft:d.Wft,hem:d.hem,rollW:d.rollW,sL:d.sL,sW:d.sW,seams:d.seams,gromCount:d.gromCount});
+  renderTarpGraphic({L:d.L,W:d.W,Lft:d.Lft,Wft:d.Wft,hem:d.hem,rollW:d.rollW,weld:d.weld,sL:d.sL,sW:d.sW,seams:d.seams,gromCount:d.gromCount});
 }
 function renderTarpGraphic(p){
   var wrap=$("tp_graphic"), hint=$("tp_ghint");
@@ -1924,8 +1927,9 @@ function renderTarpGraphic(p){
   s+='<rect x="'+ox+'" y="'+oy+'" width="'+gw.toFixed(1)+'" height="'+gh.toFixed(1)+'" fill="#EDF3EE" stroke="#345A41" stroke-width="2"/>';
   s+='<rect x="'+(ox+hp).toFixed(1)+'" y="'+(oy+hp).toFixed(1)+'" width="'+(gw-2*hp).toFixed(1)+'" height="'+(gh-2*hp).toFixed(1)+'" fill="none" stroke="#4A7C59" stroke-width="1" stroke-dasharray="5 4"/>';
   if(p.seams>0){
-    if(L>=W){ for(var k=1;k<=p.seams;k++){var x=ox+(k*p.rollW)*scale; if(x<ox+gw-0.5) s+='<line x1="'+x.toFixed(1)+'" y1="'+oy+'" x2="'+x.toFixed(1)+'" y2="'+(oy+gh).toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
-    else{ for(var k2=1;k2<=p.seams;k2++){var y=oy+(k2*p.rollW)*scale; if(y<oy+gh-0.5) s+='<line x1="'+ox+'" y1="'+y.toFixed(1)+'" x2="'+(ox+gw).toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
+    var pitch=p.rollW-(p.weld||2);
+    if(L>=W){ for(var k=1;k<=p.seams;k++){var x=ox+(k*pitch)*scale; if(x<ox+gw-0.5) s+='<line x1="'+x.toFixed(1)+'" y1="'+oy+'" x2="'+x.toFixed(1)+'" y2="'+(oy+gh).toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
+    else{ for(var k2=1;k2<=p.seams;k2++){var y=oy+(k2*pitch)*scale; if(y<oy+gh-0.5) s+='<line x1="'+ox+'" y1="'+y.toFixed(1)+'" x2="'+(ox+gw).toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#7AAE8A" stroke-width="1" stroke-dasharray="3 3"/>';} }
   }
   var nL=Math.max(1,Math.ceil(L/p.sL)), nW=Math.max(1,Math.ceil(W/p.sW)), gr=3.2;
   function gm(cx,cy){return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+gr+'" fill="#fff" stroke="#21382A" stroke-width="1.4"/>';}
@@ -2000,8 +2004,9 @@ function exportTarpPDF(){
   dash(true);doc.setDrawColor(74,124,89);doc.setLineWidth(0.8);doc.rect(tx+hp,ty+hp,gw-2*hp,gh-2*hp);dash(false);
   if(d.seams>0){
     dash(true);doc.setDrawColor(122,174,138);doc.setLineWidth(0.7);
-    if(d.L>=d.W){for(var k=1;k<=d.seams;k++){var sx=tx+k*d.rollW*scale;if(sx<tx+gw-0.5)doc.line(sx,ty,sx,ty+gh);}}
-    else{for(var k2=1;k2<=d.seams;k2++){var sy=ty+k2*d.rollW*scale;if(sy<ty+gh-0.5)doc.line(tx,sy,tx+gw,sy);}}
+    var pitch=d.rollW-d.weld;
+    if(d.L>=d.W){for(var k=1;k<=d.seams;k++){var sx=tx+k*pitch*scale;if(sx<tx+gw-0.5)doc.line(sx,ty,sx,ty+gh);}}
+    else{for(var k2=1;k2<=d.seams;k2++){var sy=ty+k2*pitch*scale;if(sy<ty+gh-0.5)doc.line(tx,sy,tx+gw,sy);}}
     dash(false);
   }
   var nL=Math.max(1,Math.ceil(d.L/d.sL)), nW=Math.max(1,Math.ceil(d.W/d.sW));
@@ -2030,11 +2035,89 @@ function exportTarpPDF(){
 
   doc.save("Tarp_"+d.Lft+"x"+d.Wft+"_"+d.prod+".pdf");
 }
+function computeCutList(d){
+  var flatL=d.L+2*d.hem, flatW=d.W+2*d.hem;
+  var panelLength=Math.max(flatL,flatW), needed=Math.min(flatL,flatW);
+  var n=d.panels, rollW=d.rollW, weld=d.weld, panels=[];
+  if(n<=1){
+    panels.push({label:"Panel",width:needed,length:panelLength,qty:1});
+  }else{
+    var wLast=needed-(n-1)*(rollW-weld);
+    if(wLast>rollW)wLast=rollW;
+    if(wLast>=rollW-0.5){ panels.push({label:"Full panel",width:rollW,length:panelLength,qty:n}); }
+    else if(wLast<=0.5){ panels.push({label:"Full panel",width:rollW,length:panelLength,qty:n}); }
+    else{ panels.push({label:"Full panel",width:rollW,length:panelLength,qty:n-1}); panels.push({label:"Edge panel",width:wLast,length:panelLength,qty:1}); }
+  }
+  return {panels:panels, n:n, panelLength:panelLength, rollYd:(n*panelLength)/36, needed:needed, flatL:flatL, flatW:flatW};
+}
+function exportCutListPDF(){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){alert("PDF library did not load. Check your connection and try again.");return;}
+  var d=computeTarp();
+  if(!d){alert("Enter the tarp length, width, and fabric first.");return;}
+  var cl=computeCutList(d);
+  var doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"});
+  var PW=612, m=48, y;
+  doc.setFillColor(74,124,89);doc.rect(0,0,PW,66,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text("RENEGADE PLASTICS",m,30);
+  doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text("Cut List and Assembly Guide",m,50);
+  y=90;
+  function kv(label,val){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(52,90,65);doc.text(label,m,y);doc.setFont("helvetica","normal");doc.setTextColor(30,30,30);doc.text(String(val),m+115,y);y+=15;}
+  function section(title){y+=8;doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(33,56,42);doc.text(title,m,y);doc.setDrawColor(74,124,89);doc.setLineWidth(1);doc.line(m,y+4,PW-m,y+4);y+=18;}
+  kv("Finished size:", d.Lft+" x "+d.Wft+" ft  ("+d.L+" x "+d.W+" in)");
+  kv("Fabric:", d.prodLabel+", "+d.gsm+" g/m2");
+  kv("Total weight:", fmt(d.totalLb,1)+" lb");
+  kv("Date:", new Date().toLocaleDateString());
+
+  section("Cut List");
+  var tableTop=y, cQty=m+4, cPanel=m+50, cW=m+250, cL=m+370;
+  doc.setFillColor(237,243,238);doc.rect(m,y,PW-2*m,16,"F");
+  doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(33,56,42);
+  doc.text("Qty",cQty,y+11);doc.text("Panel",cPanel,y+11);doc.text("Cut width (in)",cW,y+11);doc.text("Cut length (in)",cL,y+11);
+  y+=16;doc.setFont("helvetica","normal");doc.setTextColor(30,30,30);
+  cl.panels.forEach(function(p,i){
+    if(i%2){doc.setFillColor(248,250,248);doc.rect(m,y,PW-2*m,15,"F");}
+    doc.text(String(p.qty),cQty,y+10.5);doc.text(p.label,cPanel,y+10.5);
+    doc.text(fmt(p.width,1),cW,y+10.5);doc.text(fmt(p.length,1),cL,y+10.5);
+    y+=15;
+  });
+  doc.setDrawColor(207,224,212);doc.setLineWidth(0.8);doc.rect(m,tableTop,PW-2*m,y-tableTop);
+  y+=12;doc.setFontSize(9);doc.setTextColor(80,90,82);
+  doc.text("Panels run the full length of the tarp. The edge panel is trimmed to width; the offcut is scrap.",m,y);y+=4;
+
+  section("Materials");
+  kv("Fabric roll width:", d.rollW+" in");
+  kv("Roll fabric req'd:", fmt(cl.rollYd,1)+" linear yd ("+cl.n+" panels x "+fmt(cl.panelLength,1)+" in)");
+  kv("Seams:", d.seams+" welded, "+d.weld+" in overlap");
+  kv("Grommets:", d.gromCount+" total, PP ultrasonic welded, 0.75 in ID / 1.75 in OD");
+
+  section("Assembly");
+  var steps=[
+    "Cut the panels listed above from "+d.prodLabel+" on the "+d.rollW+" in roll. Each panel runs the full length of the tarp.",
+    "Lay the panels side by side in order, overlapping each seam by "+d.weld+" in. There "+(d.seams===1?"is 1 seam":"are "+d.seams+" seams")+".",
+    "Weld the seams with hot air or hot wedge. This is polypropylene, so do not use RF. Work across from one edge.",
+    "Square the assembled sheet to "+fmt(cl.flatL,1)+" x "+fmt(cl.flatW,1)+" in.",
+    "Fold a "+d.hem+" in hem on all four edges and weld it down. Finished size is now "+d.L+" x "+d.W+" in.",
+    "Mark grommet centers: every "+d.sL+" in along the two "+d.Lft+" ft length edges and every "+d.sW+" in along the two "+d.Wft+" ft width edges, starting at each corner. "+d.gromCount+" grommets total.",
+    "Install the grommets (polypropylene, ultrasonic welded, 0.75 in ID and 1.75 in OD).",
+    "Inspect all welds and grommets, then fold to about "+fmt(d.foldedL,1)+" x "+fmt(d.foldedW,1)+" in and label with the finished size and fabric."
+  ];
+  doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(30,30,30);
+  steps.forEach(function(st,i){
+    if(y>742){doc.addPage();y=m;}
+    doc.setFont("helvetica","bold");doc.text((i+1)+".",m,y);
+    doc.setFont("helvetica","normal");
+    var lines=doc.splitTextToSize(st,PW-2*m-18);
+    doc.text(lines,m+18,y);
+    y+=lines.length*13+6;
+  });
+  doc.save("CutList_"+d.Lft+"x"+d.Wft+"_"+d.prod+".pdf");
+}
 $("tp_product").innerHTML=tarpProductOptions();
 $("tp_product").value="PPI-370";
 $("tp_product").addEventListener("change",calcTarp);
 ["tp_length","tp_width","tp_gsm","tp_caliper","tp_hem","tp_weld","tp_rollw","tp_spaceL","tp_spaceW","tp_fold","tp_gromwt"].forEach(function(id){$(id).addEventListener("input",calcTarp);});
 $("tpExportBtn").addEventListener("click",exportTarpPDF);
+$("tpCutBtn").addEventListener("click",exportCutListPDF);
 
 /* ---------- Jasper Tool password gate ---------- */
 function openPw(){
